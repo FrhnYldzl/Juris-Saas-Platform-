@@ -53,8 +53,11 @@ COPY --chown=nextjs:nodejs scripts/boot.sh ./boot.sh
 RUN chmod +x ./boot.sh
 
 USER nextjs
-EXPOSE 3000
-ENV PORT=3000
+# Railway default PORT is 8080; EXPOSE should match so the edge proxy
+# auto-detects the correct target port. Local dev still works because
+# `npm run dev` / `next start` read $PORT (unset locally → Next default 3000).
+EXPOSE 8080
+ENV PORT=8080
 # HOSTNAME is intentionally not set — Railway injects its own (internal
 # service name) which would confuse `next start -H`. boot.sh hardcodes
 # 0.0.0.0 to guarantee we bind to all interfaces.
