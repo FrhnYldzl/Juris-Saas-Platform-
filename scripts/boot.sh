@@ -61,5 +61,10 @@ if [ "${SEED_ON_BOOT:-true}" = "true" ]; then
 fi
 
 # ---------- 3. Start Next.js ----------
-echo "→ starting Next.js server on :${PORT:-3000}"
-exec ./node_modules/.bin/next start -p "${PORT:-3000}" -H "${HOSTNAME:-0.0.0.0}"
+# IMPORTANT: Railway sets HOSTNAME to an internal service name (not an IP),
+# which breaks `next start -H $HOSTNAME` — we hardcode 0.0.0.0 so the
+# container actually listens on all interfaces and the Railway proxy can
+# reach it.
+PORT_TO_USE="${PORT:-3000}"
+echo "→ starting Next.js server on 0.0.0.0:${PORT_TO_USE}"
+exec ./node_modules/.bin/next start -p "${PORT_TO_USE}" -H 0.0.0.0

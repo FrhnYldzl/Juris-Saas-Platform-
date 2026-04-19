@@ -55,6 +55,8 @@ RUN chmod +x ./boot.sh
 USER nextjs
 EXPOSE 3000
 ENV PORT=3000
-ENV HOSTNAME="0.0.0.0"
+# HOSTNAME is intentionally not set — Railway injects its own (internal
+# service name) which would confuse `next start -H`. boot.sh hardcodes
+# 0.0.0.0 to guarantee we bind to all interfaces.
 
 CMD ["./boot.sh"]
