@@ -8,8 +8,8 @@ builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile"
 
 [deploy]
-# Apply migrations and start the app
-startCommand = "npx prisma migrate deploy && node server.js"
+# Dockerfile CMD applies migrations and starts the server.
+# (No startCommand override so we don't have to keep two in sync.)
 healthcheckPath = "/api/health"
 healthcheckTimeout = 30
 restartPolicyType = "ON_FAILURE"

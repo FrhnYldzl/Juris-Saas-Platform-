@@ -1,0 +1,16 @@
+# Normalize line endings to LF for cross-platform dev + Docker (alpine sh needs LF)
+* text=auto eol=lf
+
+# Shell scripts must always be LF (Docker /bin/sh fails on CRLF)
+*.sh text eol=lf
+
+# Lockfiles + generated migrations
+package-lock.json text eol=lf
+prisma/migrations/**/migration.sql text eol=lf
+
+# Binary assets
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.pdf binary
+*.ico binary
