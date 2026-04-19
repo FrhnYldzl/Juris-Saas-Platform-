@@ -4,7 +4,7 @@ import { useActionState, useState } from "react";
 import Link from "next/link";
 import { ContactType } from "@prisma/client";
 import {
-  Field, Input, TextArea, Select, FormCard, FormRow, FormActions, FormError,
+  Field, Input, TextArea, FormCard, FormRow, FormActions, FormError,
 } from "@/components/ui/form";
 import { createContact, updateContact, type ContactFormState } from "./actions";
 

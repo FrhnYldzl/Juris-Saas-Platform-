@@ -72,7 +72,11 @@ export default async function BdPage() {
             <tbody>
               {leads.map((l) => (
                 <tr key={l.id} className="border-t border-juris-line-2 hover:bg-juris-paper-2">
-                  <td className="px-4 py-3 font-medium text-juris-navy">{l.title}</td>
+                  <td className="px-4 py-3 font-medium text-juris-navy">
+                    <Link href={`/bd/${l.id}`} className="hover:text-juris-red">
+                      {l.title}
+                    </Link>
+                  </td>
                   <td className="px-4 py-3 text-juris-ink-2">
                     {l.contact?.companyName ?? l.contact?.name ?? "—"}
                   </td>
