@@ -1,0 +1,37 @@
+# ============================================================
+# Juris Platform — Railway Deployment Config
+# Docs: https://docs.railway.com/reference/config-as-code
+# ============================================================
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+# Apply migrations and start the app
+startCommand = "npx prisma migrate deploy && node server.js"
+healthcheckPath = "/api/health"
+healthcheckTimeout = 30
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 5
+
+# ---- Service variables to configure in Railway UI ----
+# Required:
+#   DATABASE_URL              (from Railway Postgres plugin)
+#   AUTH_SECRET               (openssl rand -base64 32)
+#   AUTH_URL                  (https://<your-app>.up.railway.app)
+#   NEXT_PUBLIC_APP_URL       (same as AUTH_URL)
+#   BOOTSTRAP_FIRM_NAME
+#   BOOTSTRAP_ADMIN_EMAIL
+#   BOOTSTRAP_ADMIN_PASSWORD
+#
+# Optional (AI):
+#   ANTHROPIC_API_KEY
+#   OPENAI_API_KEY
+#   GOOGLE_AI_API_KEY
+#   XAI_API_KEY
+#   MISTRAL_API_KEY
+#
+# Optional (Observability):
+#   SENTRY_DSN
+#   LOG_LEVEL

@@ -1,0 +1,17 @@
+# Local dev helper: Postgres only. Run `docker compose up -d` before `npm run dev`.
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: juris-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: juris
+    ports:
+      - "5432:5432"
+    volumes:
+      - juris-pg:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  juris-pg:

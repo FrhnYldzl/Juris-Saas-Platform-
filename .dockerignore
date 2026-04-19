@@ -1,0 +1,17 @@
+node_modules
+.next
+.git
+.github
+.vscode
+.idea
+coverage
+storage
+*.log
+.DS_Store
+.env
+.env.local
+.env.production
+!.env.example
+README.md
+CHANGELOG.md
+.eslintcache

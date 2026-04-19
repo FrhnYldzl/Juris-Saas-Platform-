@@ -1,0 +1,219 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =========================================================
+   Juris Platform — Design Tokens
+   Based on Juris Kurumsal Kimlik Kılavuzu (Temmuz 2021)
+   ========================================================= */
+:root {
+  /* Brand */
+  --juris-navy: #0a2240;
+  --juris-red: #bc2f2c;
+
+  /* Navy tints */
+  --navy-04: rgba(10, 34, 64, 0.04);
+  --navy-06: rgba(10, 34, 64, 0.06);
+  --navy-08: rgba(10, 34, 64, 0.08);
+  --navy-12: rgba(10, 34, 64, 0.12);
+  --navy-20: rgba(10, 34, 64, 0.2);
+  --navy-40: rgba(10, 34, 64, 0.4);
+  --navy-60: rgba(10, 34, 64, 0.6);
+  --navy-80: rgba(10, 34, 64, 0.8);
+  --navy-93: rgba(10, 34, 64, 0.93);
+
+  --red-06: rgba(188, 47, 44, 0.06);
+  --red-10: rgba(188, 47, 44, 0.1);
+  --red-20: rgba(188, 47, 44, 0.2);
+
+  /* Surfaces */
+  --bg: #fbfaf7;
+  --bg-elev: #ffffff;
+  --bg-sunken: #f3f2ee;
+  --bg-nav: #0a2240;
+  --border: rgba(10, 34, 64, 0.09);
+  --border-strong: rgba(10, 34, 64, 0.18);
+  --divider: rgba(10, 34, 64, 0.06);
+
+  /* Text */
+  --ink: #0a2240;
+  --ink-2: rgba(10, 34, 64, 0.72);
+  --ink-3: rgba(10, 34, 64, 0.52);
+  --ink-4: rgba(10, 34, 64, 0.36);
+  --ink-inv: #ffffff;
+
+  /* Semantic */
+  --accent: #bc2f2c;
+  --accent-ink: #8a1f1d;
+  --success: #1f7a4e;
+  --success-bg: rgba(31, 122, 78, 0.08);
+  --warn: #b4701c;
+  --warn-bg: rgba(180, 112, 28, 0.09);
+  --info: #1f5aa8;
+  --info-bg: rgba(31, 90, 168, 0.08);
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(10, 34, 64, 0.05), 0 1px 1px rgba(10, 34, 64, 0.03);
+  --shadow-md: 0 4px 12px rgba(10, 34, 64, 0.06), 0 1px 3px rgba(10, 34, 64, 0.04);
+  --shadow-lg: 0 12px 32px rgba(10, 34, 64, 0.1), 0 2px 6px rgba(10, 34, 64, 0.05);
+  --shadow-pop: 0 16px 48px rgba(10, 34, 64, 0.18);
+}
+
+[data-theme="dark"] {
+  --bg: #060f1f;
+  --bg-elev: #0d1b33;
+  --bg-sunken: #040a17;
+  --bg-nav: #040a17;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.16);
+  --divider: rgba(255, 255, 255, 0.05);
+
+  --ink: #f2f0ea;
+  --ink-2: rgba(242, 240, 234, 0.7);
+  --ink-3: rgba(242, 240, 234, 0.48);
+  --ink-4: rgba(242, 240, 234, 0.3);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.55);
+}
+
+@layer base {
+  * {
+    @apply box-border;
+  }
+  html,
+  body {
+    @apply m-0 p-0;
+  }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-inter), Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: "ss01", "cv11";
+    min-height: 100vh;
+  }
+  :focus-visible {
+    outline: 2px solid var(--juris-red);
+    outline-offset: 2px;
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--navy-12);
+    border-radius: 10px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--navy-20);
+    background-clip: padding-box;
+    border: 2px solid transparent;
+  }
+}
+
+@layer components {
+  .display {
+    font-family: var(--font-playfair), "Playfair Display", Georgia, serif;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    line-height: 1.1;
+  }
+  .label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .mono {
+    font-family: var(--font-jetbrains), "JetBrains Mono", ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+  }
+  .num {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .card {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+  }
+
+  .btn {
+    @apply inline-flex items-center gap-2 h-[34px] px-[14px] rounded-md font-semibold text-[13px] cursor-pointer transition-all duration-150;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--ink);
+    white-space: nowrap;
+  }
+  .btn:hover {
+    background: var(--navy-06);
+  }
+  .btn-primary {
+    background: var(--juris-navy);
+    color: #fff;
+    border-color: var(--juris-navy);
+  }
+  .btn-primary:hover {
+    background: #051834;
+    border-color: #051834;
+  }
+  .btn-accent {
+    background: var(--juris-red);
+    color: #fff;
+    border-color: var(--juris-red);
+  }
+  .btn-accent:hover {
+    background: #9d2622;
+    border-color: #9d2622;
+  }
+  .btn-ghost {
+    border-color: var(--border);
+    color: var(--ink);
+  }
+  .btn-ghost:hover {
+    background: var(--navy-06);
+    border-color: var(--border-strong);
+  }
+  .btn-sm {
+    @apply h-[28px] px-[10px] text-[12px] rounded-sm;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-[6px] h-[22px] px-[8px] rounded-full text-[11px] font-semibold whitespace-nowrap;
+    background: var(--navy-08);
+    color: var(--ink-2);
+  }
+  .chip-red {
+    background: var(--red-10);
+    color: var(--accent-ink);
+  }
+  .chip-green {
+    background: var(--success-bg);
+    color: var(--success);
+  }
+  .chip-amber {
+    background: var(--warn-bg);
+    color: var(--warn);
+  }
+  .chip-blue {
+    background: var(--info-bg);
+    color: var(--info);
+  }
+
+  .sep {
+    @apply h-px;
+    background: var(--divider);
+  }
+}

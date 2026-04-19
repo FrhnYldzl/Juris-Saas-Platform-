@@ -1,0 +1,519 @@
+// ================================================================
+// Juris Platform — Prisma Schema
+// Multi-tenant: every business row is scoped by firmId.
+// ================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------- Tenancy ----------------
+
+model Firm {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  taxNumber String?  @map("tax_number")
+  address   String?
+  phone     String?
+  email     String?
+  website   String?
+  logoUrl   String?  @map("logo_url")
+  settings  Json     @default("{}")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  users        User[]
+  matters      Matter[]
+  leads        Lead[]
+  contacts     Contact[]
+  invoices     Invoice[]
+  documents    Document[]
+  auditLogs    AuditLog[]
+  integrations Integration[]
+  notes        Note[]
+  tasks        Task[]
+  events       CalendarEvent[]
+
+  @@map("firms")
+}
+
+// ---------------- Auth / Users ----------------
+
+enum UserRole {
+  OWNER        // Kurucu ortak — tam yetki
+  PARTNER      // Yönetici ortak
+  ASSOCIATE    // Kıdemli avukat
+  PARALEGAL    // Stajyer / paralegal
+  ADMIN_STAFF  // İdari personel
+  CLIENT       // Müvekkil (portal)
+}
+
+model User {
+  id            String    @id @default(cuid())
+  firmId        String    @map("firm_id")
+  email         String    @unique
+  emailVerified DateTime? @map("email_verified")
+  name          String
+  image         String?
+  passwordHash  String?   @map("password_hash")
+  role          UserRole  @default(ASSOCIATE)
+  title         String?   // "Av.", "Stj. Av.", "Managing Partner" etc.
+  phone         String?
+  active        Boolean   @default(true)
+  lastLoginAt   DateTime? @map("last_login_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  firm           Firm           @relation(fields: [firmId], references: [id], onDelete: Cascade)
+  accounts       Account[]
+  sessions       Session[]
+  assignedMatters MatterAssignment[]
+  ownedLeads     Lead[]         @relation("LeadOwner")
+  createdNotes   Note[]
+  assignedTasks  Task[]         @relation("TaskAssignee")
+  createdTasks   Task[]         @relation("TaskCreator")
+  auditLogs      AuditLog[]
+  uploadedDocs   Document[]
+  events         CalendarEvent[]
+
+  @@index([firmId])
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String  @map("user_id")
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ---------------- CRM: Leads & Contacts ----------------
+
+enum LeadStage {
+  NEW
+  QUALIFIED
+  MEETING
+  PROPOSAL
+  NEGOTIATION
+  WON
+  LOST
+}
+
+enum ContactType {
+  INDIVIDUAL
+  COMPANY
+}
+
+model Contact {
+  id            String      @id @default(cuid())
+  firmId        String      @map("firm_id")
+  type          ContactType @default(INDIVIDUAL)
+  name          String
+  companyName   String?     @map("company_name")
+  email         String?
+  phone         String?
+  address       String?
+  taxNumber     String?     @map("tax_number")
+  tcNumber      String?     @map("tc_number") // TC Kimlik No
+  notes         String?     @db.Text
+  isClient      Boolean     @default(false) @map("is_client")
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+
+  firm     Firm     @relation(fields: [firmId], references: [id], onDelete: Cascade)
+  leads    Lead[]
+  matters  Matter[]
+  invoices Invoice[]
+
+  @@index([firmId])
+  @@index([firmId, isClient])
+  @@map("contacts")
+}
+
+model Lead {
+  id          String     @id @default(cuid())
+  firmId      String     @map("firm_id")
+  contactId   String?    @map("contact_id")
+  ownerId     String?    @map("owner_id")
+  title       String
+  source      String?    // "LinkedIn", "Referans", "Web", etc.
+  stage       LeadStage  @default(NEW)
+  value       Decimal?   @db.Decimal(14, 2)
+  currency    String     @default("TRY")
+  probability Int        @default(20)
+  expectedCloseAt DateTime? @map("expected_close_at")
+  description String?    @db.Text
+  lostReason  String?    @map("lost_reason")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+
+  firm    Firm     @relation(fields: [firmId], references: [id], onDelete: Cascade)
+  contact Contact? @relation(fields: [contactId], references: [id])
+  owner   User?    @relation("LeadOwner", fields: [ownerId], references: [id])
+
+  @@index([firmId])
+  @@index([firmId, stage])
+  @@map("leads")
+}
+
+// ---------------- Matters (Dosyalar) ----------------
+
+enum MatterType {
+  LITIGATION      // Dava
+  CONSULTING      // Danışmanlık
+  CONTRACT        // Sözleşme
+  COMPLIANCE      // Uyum
+  IP              // Fikri mülkiyet
+  CORPORATE       // Şirketler hukuku
+  FAMILY          // Aile hukuku
+  CRIMINAL        // Ceza
+  LABOR           // İş hukuku
+  ADMINISTRATIVE  // İdare
+  OTHER
+}
+
+enum MatterStatus {
+  ACTIVE
+  ON_HOLD
+  CLOSED_WON
+  CLOSED_LOST
+  ARCHIVED
+}
+
+enum BillingType {
+  HOURLY
+  FLAT_FEE
+  CONTINGENCY
+  RETAINER
+}
+
+model Matter {
+  id             String        @id @default(cuid())
+  firmId         String        @map("firm_id")
+  clientId       String?       @map("client_id")
+  matterNumber   String        @map("matter_number") // YYYY-NNNN
+  title          String
+  description    String?       @db.Text
+  type           MatterType    @default(OTHER)
+  status         MatterStatus  @default(ACTIVE)
+  billingType    BillingType   @default(HOURLY) @map("billing_type")
+  hourlyRate     Decimal?      @db.Decimal(10, 2) @map("hourly_rate")
+  flatFee        Decimal?      @db.Decimal(14, 2) @map("flat_fee")
+  currency       String        @default("TRY")
+  courtName      String?       @map("court_name")
+  courtFileNo    String?       @map("court_file_no")
+  opposingParty  String?       @map("opposing_party")
+  nextHearingAt  DateTime?     @map("next_hearing_at")
+  openedAt       DateTime      @default(now()) @map("opened_at")
+  closedAt       DateTime?     @map("closed_at")
+  tags           String[]      @default([])
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+
+  firm        Firm               @relation(fields: [firmId], references: [id], onDelete: Cascade)
+  client      Contact?           @relation(fields: [clientId], references: [id])
+  assignees   MatterAssignment[]
+  documents   Document[]
+  invoices    Invoice[]
+  timeEntries TimeEntry[]
+  notes       Note[]
+  tasks       Task[]
+  events      CalendarEvent[]
+
+  @@unique([firmId, matterNumber])
+  @@index([firmId])
+  @@index([firmId, status])
+  @@index([firmId, type])
+  @@map("matters")
+}
+
+model MatterAssignment {
+  id       String @id @default(cuid())
+  matterId String @map("matter_id")
+  userId   String @map("user_id")
+  role     String @default("lead") // lead, support, reviewer
+
+  matter Matter @relation(fields: [matterId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([matterId, userId])
+  @@map("matter_assignments")
+}
+
+model TimeEntry {
+  id          String   @id @default(cuid())
+  matterId    String   @map("matter_id")
+  userId      String   @map("user_id")
+  startedAt   DateTime @map("started_at")
+  durationMin Int      @map("duration_min")
+  description String
+  billable    Boolean  @default(true)
+  billed      Boolean  @default(false)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  matter Matter @relation(fields: [matterId], references: [id], onDelete: Cascade)
+
+  @@index([matterId])
+  @@map("time_entries")
+}
+
+// ---------------- Documents ----------------
+
+model Document {
+  id          String   @id @default(cuid())
+  firmId      String   @map("firm_id")
+  matterId    String?  @map("matter_id")
+  uploaderId  String?  @map("uploader_id")
+  name        String
+  mimeType    String   @map("mime_type")
+  size        Int
+  storageKey  String   @map("storage_key") // path in storage driver
+  category    String?  // "dilekçe", "sözleşme", "karar", etc.
+  version     Int      @default(1)
+  parentId    String?  @map("parent_id") // for versioning
+  summary     String?  @db.Text          // AI-generated summary
+  tags        String[] @default([])
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  firm     Firm    @relation(fields: [firmId], references: [id], onDelete: Cascade)
+  matter   Matter? @relation(fields: [matterId], references: [id], onDelete: SetNull)
+  uploader User?   @relation(fields: [uploaderId], references: [id])
+  parent   Document? @relation("DocVersions", fields: [parentId], references: [id])
+  versions Document[] @relation("DocVersions")
+
+  @@index([firmId])
+  @@index([matterId])
+  @@map("documents")
+}
+
+// ---------------- Finance ----------------
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+model Invoice {
+  id           String        @id @default(cuid())
+  firmId       String        @map("firm_id")
+  clientId     String?       @map("client_id")
+  matterId     String?       @map("matter_id")
+  invoiceNumber String       @map("invoice_number")
+  status       InvoiceStatus @default(DRAFT)
+  issuedAt     DateTime      @default(now()) @map("issued_at")
+  dueAt        DateTime?     @map("due_at")
+  paidAt       DateTime?     @map("paid_at")
+  subtotal     Decimal       @db.Decimal(14, 2) @default(0)
+  taxRate      Decimal       @db.Decimal(5, 2)  @default(20) @map("tax_rate")
+  tax          Decimal       @db.Decimal(14, 2) @default(0)
+  total        Decimal       @db.Decimal(14, 2) @default(0)
+  currency     String        @default("TRY")
+  gibUuid      String?       @map("gib_uuid") // GİB e-fatura UUID
+  notes        String?       @db.Text
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+
+  firm   Firm          @relation(fields: [firmId], references: [id], onDelete: Cascade)
+  client Contact?      @relation(fields: [clientId], references: [id])
+  matter Matter?       @relation(fields: [matterId], references: [id])
+  items  InvoiceItem[]
+
+  @@unique([firmId, invoiceNumber])
+  @@index([firmId])
+  @@index([firmId, status])
+  @@map("invoices")
+}
+
+model InvoiceItem {
+  id          String  @id @default(cuid())
+  invoiceId   String  @map("invoice_id")
+  description String
+  quantity    Decimal @db.Decimal(10, 2) @default(1)
+  unitPrice   Decimal @db.Decimal(14, 2) @map("unit_price")
+  total       Decimal @db.Decimal(14, 2)
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@map("invoice_items")
+}
+
+// ---------------- Calendar & Tasks ----------------
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+  CANCELLED
+}
+
+enum TaskPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+model Task {
+  id          String       @id @default(cuid())
+  firmId      String       @map("firm_id")
+  matterId    String?      @map("matter_id")
+  creatorId   String       @map("creator_id")
+  assigneeId  String?      @map("assignee_id")
+  title       String
+  description String?      @db.Text
+  status      TaskStatus   @default(TODO)
+  priority    TaskPriority @default(NORMAL)
+  dueAt       DateTime?    @map("due_at")
+  completedAt DateTime?    @map("completed_at")
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  firm     Firm    @relation(fields: [firmId], references: [id], onDelete: Cascade)
+  matter   Matter? @relation(fields: [matterId], references: [id], onDelete: SetNull)
+  creator  User    @relation("TaskCreator", fields: [creatorId], references: [id])
+  assignee User?   @relation("TaskAssignee", fields: [assigneeId], references: [id])
+
+  @@index([firmId])
+  @@index([assigneeId, status])
+  @@map("tasks")
+}
+
+enum EventType {
+  HEARING       // Duruşma
+  MEETING       // Toplantı
+  DEADLINE      // Süre sonu
+  REMINDER      // Hatırlatma
+  OTHER
+}
+
+model CalendarEvent {
+  id        String    @id @default(cuid())
+  firmId    String    @map("firm_id")
+  matterId  String?   @map("matter_id")
+  ownerId   String    @map("owner_id")
+  type      EventType @default(MEETING)
+  title     String
+  location  String?
+  startsAt  DateTime  @map("starts_at")
+  endsAt    DateTime? @map("ends_at")
+  allDay    Boolean   @default(false) @map("all_day")
+  notes     String?   @db.Text
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  firm   Firm    @relation(fields: [firmId], references: [id], onDelete: Cascade)
+  matter Matter? @relation(fields: [matterId], references: [id], onDelete: SetNull)
+  owner  User    @relation(fields: [ownerId], references: [id])
+
+  @@index([firmId, startsAt])
+  @@map("calendar_events")
+}
+
+// ---------------- Notes ----------------
+
+model Note {
+  id         String   @id @default(cuid())
+  firmId     String   @map("firm_id")
+  authorId   String   @map("author_id")
+  matterId   String?  @map("matter_id")
+  body       String   @db.Text
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  firm   Firm    @relation(fields: [firmId], references: [id], onDelete: Cascade)
+  author User    @relation(fields: [authorId], references: [id])
+  matter Matter? @relation(fields: [matterId], references: [id], onDelete: Cascade)
+
+  @@index([firmId])
+  @@map("notes")
+}
+
+// ---------------- Integrations ----------------
+
+enum IntegrationStatus {
+  CONNECTED
+  DISCONNECTED
+  PENDING
+  ERROR
+}
+
+model Integration {
+  id         String            @id @default(cuid())
+  firmId     String            @map("firm_id")
+  provider   String            // "uyap", "gib", "google_drive", "linkedin", etc.
+  status     IntegrationStatus @default(PENDING)
+  config     Json              @default("{}")
+  credentials Json?            // encrypted at rest (TODO: add crypto layer)
+  lastSyncAt DateTime?         @map("last_sync_at")
+  lastError  String?           @map("last_error") @db.Text
+  createdAt  DateTime          @default(now()) @map("created_at")
+  updatedAt  DateTime          @updatedAt @map("updated_at")
+
+  firm Firm @relation(fields: [firmId], references: [id], onDelete: Cascade)
+
+  @@unique([firmId, provider])
+  @@map("integrations")
+}
+
+// ---------------- Audit Log ----------------
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  firmId     String   @map("firm_id")
+  actorId    String?  @map("actor_id")
+  action     String   // "matter.create", "invoice.send", "user.login", etc.
+  entityType String?  @map("entity_type")
+  entityId   String?  @map("entity_id")
+  diff       Json?    // before/after
+  ip         String?
+  userAgent  String?  @map("user_agent") @db.Text
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  firm  Firm  @relation(fields: [firmId], references: [id], onDelete: Cascade)
+  actor User? @relation(fields: [actorId], references: [id])
+
+  @@index([firmId, createdAt])
+  @@index([entityType, entityId])
+  @@map("audit_logs")
+}
