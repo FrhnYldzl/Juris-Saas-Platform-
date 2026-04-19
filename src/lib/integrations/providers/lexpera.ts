@@ -16,7 +16,7 @@ export const lexperaService: IntegrationService = {
   },
 };
 
-export async function lexperaSearch(query: string): Promise<{ results: unknown[]; note?: string }> {
+export async function lexperaSearch(_query: string): Promise<{ results: unknown[]; note?: string }> {
   if (!process.env.LEXPERA_API_KEY) {
     return { results: [], note: "API anahtarı yok — örnek veri dönüyor." };
   }

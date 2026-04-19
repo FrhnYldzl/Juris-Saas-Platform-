@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { SectionHead } from "@/components/ui/section-head";
 import { matterStatusChip, matterTypeLabel } from "@/lib/labels";
 import { formatDateTR, formatTRY } from "@/lib/utils";
-import { ChevronLeft, FileText, Clock, Scale } from "lucide-react";
+import { ChevronLeft, FileText, Clock } from "lucide-react";
 
 export const metadata = { title: "Dosya Detayı" };
 

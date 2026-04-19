@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { initials } from "@/lib/utils";
 
 export function Avatar({
@@ -12,15 +13,15 @@ export function Avatar({
   src?: string | null;
 }) {
   if (src) {
-    /* eslint-disable-next-line @next/next/no-img-element */
     return (
-      <img
+      <Image
         src={src}
         alt={name}
         width={size}
         height={size}
         className="rounded-full object-cover"
         style={{ width: size, height: size }}
+        unoptimized
       />
     );
   }

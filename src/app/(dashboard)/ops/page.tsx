@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus, Gavel, Briefcase, FileText, Scale } from "lucide-react";
+import { Plus, Scale } from "lucide-react";
 import { requireTenant } from "@/lib/tenancy";
 import { prisma } from "@/lib/prisma";
 import { Kpi } from "@/components/ui/kpi";

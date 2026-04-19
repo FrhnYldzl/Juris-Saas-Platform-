@@ -23,7 +23,7 @@ export const gibService: IntegrationService = {
 };
 
 /** Sahte/gerçek: e-fatura UUID üretir */
-export async function gibIssueInvoice(_firmId: string, invoiceData: unknown) {
+export async function gibIssueInvoice(_firmId: string, _invoiceData: unknown) {
   const testMode = process.env.GIB_TEST_MODE !== "false";
   if (testMode) {
     return {

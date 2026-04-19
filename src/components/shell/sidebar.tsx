@@ -16,7 +16,7 @@ interface SidebarProps {
   firmName: string;
 }
 
-export function Sidebar({ user, firmName }: SidebarProps) {
+export function Sidebar({ user, firmName: _firmName }: SidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
 

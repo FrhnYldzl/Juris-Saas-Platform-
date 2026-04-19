@@ -1,7 +1,7 @@
 import type { ModuleId } from "@/lib/rbac";
 import type { LucideIcon } from "lucide-react";
 import {
-  LayoutDashboard, TrendingUp, Briefcase, Megaphone, DollarSign,
+  LayoutDashboard, TrendingUp, Megaphone, DollarSign,
   Wallet, Users, Settings, Plug, FolderKanban,
 } from "lucide-react";
 

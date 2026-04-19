@@ -205,7 +205,7 @@ function Hero() {
           </div>
           <div className="hidden md:block absolute -left-6 -bottom-6 bg-white rounded-lg border border-[#E5E9F0] p-4 shadow-lg max-w-[220px]">
             <div className="text-[11px] uppercase tracking-wider text-[#BC2F2C] font-semibold mb-1">
-              2021'den bu yana
+              2021’den bu yana
             </div>
             <div className="display text-[22px] text-[#0A2240] leading-tight">
               Özgür olmak.
@@ -505,7 +505,7 @@ function CTA() {
                   lineHeight: 1.15,
                 }}
               >
-                Juris Platform'a hazır mısınız?
+                Juris Platform’a hazır mısınız?
               </h3>
               <p className="mt-3 text-white/70 text-[15px] max-w-xl">
                 Ekibinizin günlük işleyişini dijitalleştirmek için hemen başlayın.
