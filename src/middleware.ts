@@ -2,7 +2,11 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
 
-const PUBLIC_PATHS = ["/login", "/register", "/forgot-password", "/api/auth", "/api/health"];
+const PUBLIC_PATHS = [
+  "/", "/login", "/register", "/forgot-password",
+  "/kvkk", "/gizlilik", "/iletisim",
+  "/api/auth", "/api/health",
+];
 const PUBLIC_ASSETS = ["/_next", "/favicon.ico", "/brand", "/fonts", "/robots.txt", "/sitemap.xml"];
 
 export default async function middleware(req: NextRequest) {
