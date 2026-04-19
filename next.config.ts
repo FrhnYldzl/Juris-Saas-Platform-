@@ -3,7 +3,8 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
-  output: "standalone",
+  // Standalone disabled: we ship full node_modules to get Prisma CLI's
+  // transitive deps (e.g. 'effect') working at runtime for migrate deploy.
   experimental: {
     serverActions: { bodySizeLimit: "10mb" },
   },
