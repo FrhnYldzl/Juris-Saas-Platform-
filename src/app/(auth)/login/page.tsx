@@ -54,7 +54,13 @@ export default async function LoginPage({
             </p>
           </div>
 
-          <LoginForm nextUrl={params.next} initialError={params.error} />
+          <LoginForm
+            nextUrl={params.next}
+            initialError={params.error}
+            googleEnabled={Boolean(
+              process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET,
+            )}
+          />
 
           <div className="sep mt-7 mb-5" />
 
