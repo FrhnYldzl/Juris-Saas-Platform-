@@ -5,7 +5,10 @@ import { prisma } from "@/lib/prisma";
 import { SectionHead } from "@/components/ui/section-head";
 import { matterStatusChip, matterTypeLabel } from "@/lib/labels";
 import { formatDateTR, formatTRY } from "@/lib/utils";
-import { ChevronLeft, FileText, Clock } from "lucide-react";
+import { ChevronLeft, FileText } from "lucide-react";
+import { TimeEntryPanel } from "./time-entry-panel";
+import { auth } from "@/lib/auth";
+import { can } from "@/lib/rbac";
 
 export const metadata = { title: "Dosya Detayı" };
 
@@ -17,6 +20,7 @@ export default async function MatterDetailPage({
   const { id } = await params;
   const { firmId } = await requireTenant();
 
+  const session = await auth();
   const matter = await prisma.matter.findFirst({
     where: { id, firmId },
     include: {
@@ -25,11 +29,25 @@ export default async function MatterDetailPage({
       documents: { orderBy: { createdAt: "desc" }, take: 10 },
       events: { orderBy: { startsAt: "asc" }, take: 10, where: { startsAt: { gte: new Date() } } },
       invoices: { orderBy: { issuedAt: "desc" } },
-      timeEntries: { orderBy: { startedAt: "desc" }, take: 10 },
+      timeEntries: {
+        orderBy: { startedAt: "desc" },
+        include: { matter: { select: { firmId: true } } },
+      },
     },
   });
 
   if (!matter) notFound();
+  const canEditMatter = session?.user ? can(session.user.role, "matter.edit") : false;
+
+  // Fetch user names for time entries (one round-trip)
+  const timeUserIds = Array.from(new Set(matter.timeEntries.map((t) => t.userId)));
+  const timeUsers = timeUserIds.length
+    ? await prisma.user.findMany({
+        where: { id: { in: timeUserIds } },
+        select: { id: true, name: true },
+      })
+    : [];
+  const userNameMap = new Map(timeUsers.map((u) => [u.id, u.name]));
 
   const chip = matterStatusChip(matter.status);
   const totalBilled = matter.invoices.reduce((s, i) => s + i.total.toNumber(), 0);
@@ -108,24 +126,20 @@ export default async function MatterDetailPage({
             )}
           </div>
 
-          <div className="card p-6">
-            <SectionHead title="Zaman Kayıtları" small />
-            {matter.timeEntries.length === 0 ? (
-              <div className="text-sm text-juris-ink-3 py-4 text-center">Kayıt yok</div>
-            ) : (
-              <div className="flex flex-col divide-y divide-juris-line-2">
-                {matter.timeEntries.map((t) => (
-                  <div key={t.id} className="py-2.5 flex items-center gap-3 text-sm">
-                    <Clock size={14} className="text-juris-ink-3" />
-                    <div className="flex-1">{t.description}</div>
-                    <div className="mono text-juris-navy">
-                      {(t.durationMin / 60).toFixed(1)}h
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <TimeEntryPanel
+            matterId={matter.id}
+            canEdit={canEditMatter}
+            hourlyRate={matter.hourlyRate?.toNumber() ?? null}
+            entries={matter.timeEntries.map((t) => ({
+              id: t.id,
+              startedAt: t.startedAt,
+              durationMin: t.durationMin,
+              description: t.description,
+              billable: t.billable,
+              billed: t.billed,
+              userName: userNameMap.get(t.userId) ?? "—",
+            }))}
+          />
         </div>
 
         {/* Side */}

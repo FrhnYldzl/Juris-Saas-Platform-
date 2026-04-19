@@ -81,7 +81,9 @@ export default async function FinancePage() {
                 return (
                   <tr key={inv.id} className="border-t border-juris-line-2 hover:bg-juris-paper-2">
                     <td className="px-4 py-3 mono font-semibold text-juris-navy text-xs">
-                      {inv.invoiceNumber}
+                      <Link href={`/finance/${inv.id}`} className="hover:text-juris-red">
+                        {inv.invoiceNumber}
+                      </Link>
                     </td>
                     <td className="px-4 py-3 text-juris-ink-2">
                       {inv.client?.companyName ?? inv.client?.name ?? "—"}
