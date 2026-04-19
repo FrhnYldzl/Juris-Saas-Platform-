@@ -39,6 +39,9 @@ model Firm {
   notes        Note[]
   tasks        Task[]
   events       CalendarEvent[]
+  messages     MatterMessage[]
+  subscription Subscription?
+  contentItems ContentItem[]
 
   @@map("firms")
 }
@@ -81,6 +84,7 @@ model User {
   auditLogs      AuditLog[]
   uploadedDocs   Document[]
   events         CalendarEvent[]
+  messages       MatterMessage[]
 
   @@index([firmId])
   @@map("users")
@@ -258,6 +262,7 @@ model Matter {
   notes       Note[]
   tasks       Task[]
   events      CalendarEvent[]
+  messages    MatterMessage[]
 
   @@unique([firmId, matterNumber])
   @@index([firmId])
@@ -494,6 +499,108 @@ model Integration {
 
   @@unique([firmId, provider])
   @@map("integrations")
+}
+
+// ---------------- Client ↔ Team Messaging ----------------
+
+model MatterMessage {
+  id        String    @id @default(cuid())
+  firmId    String    @map("firm_id")
+  matterId  String    @map("matter_id")
+  senderId  String    @map("sender_id")
+  body      String    @db.Text
+  readAt    DateTime? @map("read_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  firm   Firm   @relation(fields: [firmId], references: [id], onDelete: Cascade)
+  matter Matter @relation(fields: [matterId], references: [id], onDelete: Cascade)
+  sender User   @relation(fields: [senderId], references: [id])
+
+  @@index([firmId])
+  @@index([matterId, createdAt])
+  @@map("matter_messages")
+}
+
+// ---------------- Subscription / Billing ----------------
+
+enum PlanTier {
+  FREE
+  STARTER
+  PROFESSIONAL
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  INCOMPLETE
+  INCOMPLETE_EXPIRED
+}
+
+model Subscription {
+  id                   String             @id @default(cuid())
+  firmId               String             @unique @map("firm_id")
+  tier                 PlanTier           @default(FREE)
+  status               SubscriptionStatus @default(TRIALING)
+  stripeCustomerId     String?            @unique @map("stripe_customer_id")
+  stripeSubscriptionId String?            @unique @map("stripe_subscription_id")
+  stripePriceId        String?            @map("stripe_price_id")
+  currentPeriodStart   DateTime?          @map("current_period_start")
+  currentPeriodEnd     DateTime?          @map("current_period_end")
+  trialEndsAt          DateTime?          @map("trial_ends_at")
+  cancelAtPeriodEnd    Boolean            @default(false) @map("cancel_at_period_end")
+  createdAt            DateTime           @default(now()) @map("created_at")
+  updatedAt            DateTime           @updatedAt @map("updated_at")
+
+  firm Firm @relation(fields: [firmId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}
+
+// ---------------- Marketing Content Calendar ----------------
+
+enum ContentChannel {
+  BLOG
+  LINKEDIN
+  INSTAGRAM
+  X
+  NEWSLETTER
+  PODCAST
+  VIDEO
+  OTHER
+}
+
+enum ContentStatus {
+  IDEA
+  DRAFT
+  REVIEW
+  SCHEDULED
+  PUBLISHED
+  ARCHIVED
+}
+
+model ContentItem {
+  id          String         @id @default(cuid())
+  firmId      String         @map("firm_id")
+  title       String
+  summary     String?        @db.Text
+  channel     ContentChannel @default(BLOG)
+  status      ContentStatus  @default(IDEA)
+  author      String?
+  publishAt   DateTime?      @map("publish_at")
+  publishedAt DateTime?      @map("published_at")
+  url         String?
+  tags        String[]       @default([])
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+
+  firm Firm @relation(fields: [firmId], references: [id], onDelete: Cascade)
+
+  @@index([firmId, publishAt])
+  @@index([firmId, status])
+  @@map("content_items")
 }
 
 // ---------------- Audit Log ----------------

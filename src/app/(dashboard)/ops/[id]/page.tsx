@@ -12,6 +12,7 @@ import { TasksPanel } from "./tasks-panel";
 import { EventsPanel } from "./events-panel";
 import { DocumentsPanel } from "./documents-panel";
 import { AISummaryButton } from "./ai-summary-button";
+import { MessagesPanel } from "@/components/messaging/messages-panel";
 import { auth } from "@/lib/auth";
 import { can } from "@/lib/rbac";
 
@@ -196,6 +197,19 @@ export default async function MatterDetailPage({
               authorName: n.author.name,
             }))}
           />
+
+          {matter.client?.email && (
+            <MessagesPanel
+              matterId={matter.id}
+              title="Müvekkil Mesajları"
+              subtitle={`${
+                matter.client.type === "COMPANY"
+                  ? matter.client.companyName ?? matter.client.name
+                  : matter.client.name
+              } ile doğrudan yazışma`}
+              emptyLabel="Henüz mesaj yok. Müvekkilinize ilk mesajı gönderin."
+            />
+          )}
 
           <DocumentsPanel
             matterId={matter.id}

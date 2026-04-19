@@ -1,18 +1,24 @@
 import Link from "next/link";
-import { ChevronRight, ScrollText } from "lucide-react";
+import { ChevronRight, ScrollText, CreditCard } from "lucide-react";
 import { requireTenant } from "@/lib/tenancy";
 import { prisma } from "@/lib/prisma";
 import { can } from "@/lib/rbac";
 import { SectionHead } from "@/components/ui/section-head";
+import { planByTier } from "@/lib/billing/plans";
 
 export const metadata = { title: "Ayarlar" };
 
 export default async function SettingsPage() {
   const { firmId, role } = await requireTenant();
-  const firm = await prisma.firm.findUnique({ where: { id: firmId } });
+  const [firm, sub] = await Promise.all([
+    prisma.firm.findUnique({ where: { id: firmId } }),
+    prisma.subscription.findUnique({ where: { firmId } }),
+  ]);
   if (!firm) return null;
 
   const canAudit = can(role, "audit.view");
+  const canBilling = role === "OWNER" || role === "PARTNER";
+  const plan = planByTier(sub?.tier ?? "FREE");
 
   return (
     <div className="px-6 py-8 max-w-[900px] mx-auto">
@@ -35,6 +41,25 @@ export default async function SettingsPage() {
           <dd className="text-juris-ink-2">{firm.website ?? "—"}</dd>
         </dl>
       </div>
+
+      {canBilling && (
+        <Link
+          href="/settings/billing"
+          className="card p-5 mb-5 flex items-center gap-4 hover:border-juris-navy-200 hover:shadow-juris-md transition-all group"
+        >
+          <div className="w-11 h-11 rounded-md bg-juris-navy-100 flex items-center justify-center text-juris-navy">
+            <CreditCard size={18} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h4 className="font-semibold text-juris-navy mb-0.5">Abonelik & Faturalama</h4>
+            <p className="text-xs text-juris-ink-3">
+              Mevcut plan: <span className="font-medium">{plan?.name ?? "Başlangıç"}</span>
+              {sub?.status && sub.status !== "TRIALING" && ` · ${sub.status}`}
+            </p>
+          </div>
+          <ChevronRight size={18} className="text-juris-ink-4 group-hover:text-juris-red flex-shrink-0" />
+        </Link>
+      )}
 
       {canAudit && (
         <Link

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireTenant } from "@/lib/tenancy";
 import { prisma } from "@/lib/prisma";
 import { Kpi } from "@/components/ui/kpi";
@@ -67,9 +68,17 @@ export default async function ClientPortalPage() {
               {contact.matters.map((m) => {
                 const chip = matterStatusChip(m.status);
                 return (
-                  <tr key={m.id} className="border-t border-juris-line-2">
-                    <td className="px-4 py-3 mono text-xs text-juris-navy">{m.matterNumber}</td>
-                    <td className="px-4 py-3 font-medium">{m.title}</td>
+                  <tr key={m.id} className="border-t border-juris-line-2 hover:bg-juris-paper-2">
+                    <td className="px-4 py-3 mono text-xs text-juris-navy">
+                      <Link href={`/portal/matters/${m.id}`} className="hover:text-juris-red">
+                        {m.matterNumber}
+                      </Link>
+                    </td>
+                    <td className="px-4 py-3 font-medium">
+                      <Link href={`/portal/matters/${m.id}`} className="hover:text-juris-red">
+                        {m.title}
+                      </Link>
+                    </td>
                     <td className="px-4 py-3">
                       <span className={`chip chip-${chip.tone}`}>{chip.label}</span>
                     </td>
