@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import Link from "next/link";
-import { LogOut } from "lucide-react";
 import { SignOutButton } from "@/components/shell/signout-button";
+import { JurisLogo } from "@/components/ui/brand-mark";
 
 export default async function PortalLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
@@ -12,15 +12,11 @@ export default async function PortalLayout({ children }: { children: React.React
   return (
     <div className="min-h-screen" style={{ background: "var(--bg)" }}>
       <header className="bg-juris-navy text-white px-6 py-4 flex items-center justify-between sticky top-0 z-10">
-        <Link href="/portal" className="flex items-center gap-3">
-          <div className="w-7 h-7 bg-juris-red rounded flex items-center justify-center font-serif font-semibold">
-            j
-          </div>
-          <div>
-            <div className="display text-xl leading-none">juris</div>
-            <div className="text-[9px] uppercase tracking-[0.14em] opacity-60 mt-0.5">
-              Müvekkil Portalı
-            </div>
+        <Link href="/portal" className="flex items-center gap-4">
+          <JurisLogo variant="white" height={36} priority />
+          <div className="w-px h-7 bg-white/15" />
+          <div className="text-[11px] uppercase tracking-[0.14em] opacity-70 font-semibold">
+            Müvekkil Portalı
           </div>
         </Link>
         <div className="flex items-center gap-3">

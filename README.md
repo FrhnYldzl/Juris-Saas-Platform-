@@ -67,7 +67,7 @@ http://localhost:3000 adresinde giriş ekranı açılır.
 AUTH_SECRET              = $(openssl rand -base64 32)
 AUTH_URL                 = https://<app>.up.railway.app
 NEXT_PUBLIC_APP_URL      = https://<app>.up.railway.app
-BOOTSTRAP_FIRM_NAME      = Juris Hukuk Bürosu
+BOOTSTRAP_FIRM_NAME      = Juris Avukatlık Ortaklığı
 BOOTSTRAP_ADMIN_EMAIL    = admin@juris.com.tr
 BOOTSTRAP_ADMIN_PASSWORD = güçlü-bir-şifre
 ANTHROPIC_API_KEY        = sk-ant-...
@@ -205,4 +205,4 @@ Bu repo şu an iç geliştirme amaçlı kapalıdır. İlerde açık kaynak/şeff
 
 ## 📄 Lisans
 
-Proprietary — tüm hakları Juris Hukuk Bürosu'na aittir.
+Proprietary — tüm hakları Juris Avukatlık Ortaklığı'na aittir.

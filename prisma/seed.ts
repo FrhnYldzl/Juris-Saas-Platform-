@@ -4,7 +4,7 @@ import bcrypt from "bcryptjs";
 const prisma = new PrismaClient();
 
 async function main() {
-  const firmName = process.env.BOOTSTRAP_FIRM_NAME ?? "Juris Hukuk Bürosu";
+  const firmName = process.env.BOOTSTRAP_FIRM_NAME ?? "Juris Avukatlık Ortaklığı";
   const adminEmail = (process.env.BOOTSTRAP_ADMIN_EMAIL ?? "admin@juris.local").toLowerCase();
   const adminPassword = process.env.BOOTSTRAP_ADMIN_PASSWORD ?? "juris1234";
 

@@ -8,6 +8,7 @@ import type { UserRole } from "@prisma/client";
 import { NAV_SECTIONS } from "./nav-config";
 import { canAccessModule } from "@/lib/rbac";
 import { Avatar } from "@/components/ui/avatar";
+import { JurisLogo, JurisMark } from "@/components/ui/brand-mark";
 import { cn } from "@/lib/utils";
 
 interface SidebarProps {
@@ -39,18 +40,14 @@ export function Sidebar({ user, firmName }: SidebarProps) {
       {/* Brand */}
       <div
         className={cn(
-          "flex items-center gap-3 border-b border-white/10",
+          "flex items-center border-b border-white/10",
           collapsed ? "px-4 py-5 justify-center" : "px-[22px] py-5",
         )}
       >
-        <JurisMark size={26} />
-        {!collapsed && (
-          <div className="flex flex-col">
-            <span className="display text-[22px] leading-none">juris</span>
-            <span className="text-[9px] uppercase tracking-[0.14em] text-white/50 font-semibold mt-[3px]">
-              Platform
-            </span>
-          </div>
+        {collapsed ? (
+          <JurisMark variant="white" size={28} />
+        ) : (
+          <JurisLogo variant="white" height={40} />
         )}
       </div>
 
@@ -169,21 +166,3 @@ function roleLabel(role: UserRole): string {
   return map[role];
 }
 
-function JurisMark({ size = 26 }: { size?: number }) {
-  return (
-    <div
-      className="flex items-center justify-center font-semibold"
-      style={{
-        width: size,
-        height: size,
-        background: "#BC2F2C",
-        color: "white",
-        borderRadius: 4,
-        fontFamily: "'Playfair Display', serif",
-        fontSize: size * 0.55,
-      }}
-    >
-      j
-    </div>
-  );
-}

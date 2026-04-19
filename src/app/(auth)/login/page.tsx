@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { LoginForm } from "./login-form";
+import { JurisLogo } from "@/components/ui/brand-mark";
 
 export const metadata = { title: "Giriş" };
 
@@ -16,22 +17,8 @@ export default async function LoginPage({
   return (
     <div className="w-full max-w-[440px]">
       {/* Mobile logo */}
-      <div className="lg:hidden mb-8 flex items-center gap-3 justify-center">
-        <div
-          style={{
-            width: 40, height: 40, background: "#BC2F2C", borderRadius: 5,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontFamily: "'Playfair Display', Georgia, serif",
-            fontSize: 26, color: "white", fontWeight: 500, lineHeight: 1, paddingBottom: 2,
-            letterSpacing: "-0.02em",
-          }}
-        >j</div>
-        <div className="leading-none">
-          <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 32, fontWeight: 500, color: "white", letterSpacing: "-0.02em" }}>
-            juris
-          </div>
-          <div className="text-[9px] tracking-[0.2em] uppercase text-white/50 font-semibold mt-0.5">Platform</div>
-        </div>
+      <div className="lg:hidden mb-8 flex justify-center">
+        <JurisLogo variant="white" height={48} priority />
       </div>
 
       {/* Card */}
@@ -72,7 +59,7 @@ export default async function LoginPage({
           <div className="sep mt-7 mb-5" />
 
           <div className="flex items-center justify-between text-[11px] text-[#8895AB]">
-            <span>© {new Date().getFullYear()} Juris Hukuk Bürosu</span>
+            <span>© {new Date().getFullYear()} Juris Avukatlık Ortaklığı</span>
             <a href="/kvkk" className="hover:text-[#BC2F2C] transition-colors">
               KVKK Aydınlatma
             </a>
