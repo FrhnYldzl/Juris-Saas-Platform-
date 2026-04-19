@@ -1,0 +1,25 @@
+name: Security Audit
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    - cron: "0 0 * * 0" # Weekly Sunday 00:00 UTC
+
+jobs:
+  audit:
+    name: npm audit (≥ moderate)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+      - name: Install (no scripts — we only need the lockfile graph)
+        run: npm ci --ignore-scripts
+      - name: Audit production dependencies
+        run: npm audit --audit-level=moderate --omit=dev
