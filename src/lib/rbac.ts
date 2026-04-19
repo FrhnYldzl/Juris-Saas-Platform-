@@ -11,6 +11,7 @@ export type ModuleId =
   | "people"
   | "integrations"
   | "settings"
+  | "ai"
   | "portal";
 
 // Permission keys — granular actions
@@ -78,10 +79,10 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
 };
 
 const MODULE_ACCESS: Record<UserRole, ModuleId[]> = {
-  OWNER: ["command", "bd", "ops", "marketing", "sales", "finance", "people", "integrations", "settings"],
-  PARTNER: ["command", "bd", "ops", "marketing", "sales", "finance", "people", "integrations", "settings"],
-  ASSOCIATE: ["command", "bd", "ops", "marketing", "sales", "finance", "people", "settings"],
-  PARALEGAL: ["command", "ops"],
+  OWNER: ["command", "bd", "ops", "marketing", "sales", "finance", "people", "ai", "integrations", "settings"],
+  PARTNER: ["command", "bd", "ops", "marketing", "sales", "finance", "people", "ai", "integrations", "settings"],
+  ASSOCIATE: ["command", "bd", "ops", "marketing", "sales", "finance", "people", "ai", "settings"],
+  PARALEGAL: ["command", "ops", "ai"],
   ADMIN_STAFF: ["command", "ops", "finance", "people", "settings"],
   CLIENT: ["portal"],
 };

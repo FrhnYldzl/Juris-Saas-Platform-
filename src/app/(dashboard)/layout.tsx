@@ -1,8 +1,11 @@
 import { redirect } from "next/navigation";
 import { Sidebar } from "@/components/shell/sidebar";
 import { Topbar } from "@/components/shell/topbar";
+import { AIChatWidget } from "@/components/ai/chat-widget";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { can } from "@/lib/rbac";
+import { listProviders } from "@/lib/ai";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
@@ -18,6 +21,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
   });
   if (!user) redirect("/login");
 
+  const aiEnabled = can(user.role, "ai.use") && process.env.FEATURE_AI_ENABLED !== "false";
+  const providers = aiEnabled ? listProviders() : [];
+
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: "var(--bg)" }}>
       <Sidebar
@@ -28,6 +34,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <Topbar user={{ name: user.name, email: user.email }} />
         <main className="flex-1 overflow-y-auto">{children}</main>
       </div>
+      {aiEnabled && <AIChatWidget providers={providers} />}
     </div>
   );
 }

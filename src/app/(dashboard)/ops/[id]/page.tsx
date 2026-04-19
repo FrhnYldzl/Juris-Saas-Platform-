@@ -11,6 +11,7 @@ import { NotesPanel } from "./notes-panel";
 import { TasksPanel } from "./tasks-panel";
 import { EventsPanel } from "./events-panel";
 import { DocumentsPanel } from "./documents-panel";
+import { AISummaryButton } from "./ai-summary-button";
 import { auth } from "@/lib/auth";
 import { can } from "@/lib/rbac";
 
@@ -102,9 +103,14 @@ export default async function MatterDetailPage({
             </div>
           )}
         </div>
-        <Link href={`/ops/${id}/edit`} className="btn btn-ghost">
-          <Pencil size={14} /> Düzenle
-        </Link>
+        <div className="flex gap-2">
+          {session?.user && can(session.user.role, "ai.use") && (
+            <AISummaryButton matterId={matter.id} />
+          )}
+          <Link href={`/ops/${id}/edit`} className="btn btn-ghost">
+            <Pencil size={14} /> Düzenle
+          </Link>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

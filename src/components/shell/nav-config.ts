@@ -2,7 +2,7 @@ import type { ModuleId } from "@/lib/rbac";
 import type { LucideIcon } from "lucide-react";
 import {
   LayoutDashboard, TrendingUp, Megaphone, DollarSign,
-  Wallet, Users, Settings, Plug, FolderKanban,
+  Wallet, Users, Settings, Plug, FolderKanban, Sparkles,
 } from "lucide-react";
 
 export interface NavItem {
@@ -36,6 +36,12 @@ export const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
+    group: "Araçlar",
+    items: [
+      { id: "ai", label: "AI Araçları", href: "/ai/petition", icon: Sparkles },
+    ],
+  },
+  {
     group: "Firma",
     items: [
       { id: "people", label: "Ekip", href: "/people", icon: Users },
@@ -52,8 +58,10 @@ export const PAGE_TITLES: Record<string, { title: string; breadcrumb?: string[] 
   "/marketing": { title: "Pazarlama", breadcrumb: ["Modüller"] },
   "/sales": { title: "Satış", breadcrumb: ["Modüller"] },
   "/finance": { title: "Finans", breadcrumb: ["Modüller"] },
+  "/ai/petition": { title: "Dilekçe Taslağı", breadcrumb: ["Araçlar", "AI"] },
   "/people": { title: "Ekip", breadcrumb: ["Firma"] },
   "/integrations": { title: "Entegrasyonlar", breadcrumb: ["Firma"] },
   "/settings": { title: "Ayarlar", breadcrumb: ["Firma"] },
+  "/settings/audit": { title: "Audit Log", breadcrumb: ["Ayarlar"] },
   "/portal": { title: "Müvekkil Portalı" },
 };
