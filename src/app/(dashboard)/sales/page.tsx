@@ -65,7 +65,9 @@ export default async function SalesPage() {
               {contacts.map((c) => (
                 <tr key={c.id} className="border-t border-juris-line-2 hover:bg-juris-paper-2">
                   <td className="px-4 py-3 font-medium text-juris-navy">
-                    {c.type === "COMPANY" ? c.companyName ?? c.name : c.name}
+                    <Link href={`/sales/${c.id}`} className="hover:text-juris-red">
+                      {c.type === "COMPANY" ? c.companyName ?? c.name : c.name}
+                    </Link>
                   </td>
                   <td className="px-4 py-3 text-xs text-juris-ink-2">
                     {c.type === "COMPANY" ? "Kurum" : "Birey"}
