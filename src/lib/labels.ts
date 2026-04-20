@@ -32,11 +32,13 @@ export function matterStatusChip(s: MatterStatus): { label: string; tone: "green
 
 export function leadStageLabel(s: LeadStage): string {
   const map: Record<LeadStage, string> = {
-    NEW: "Yeni",
-    QUALIFIED: "Nitelikli",
-    MEETING: "Toplantı",
+    NEW: "Lead",
+    QUALIFIED: "İlk Görüşme",
+    MEETING: "Scope",
     PROPOSAL: "Teklif",
     NEGOTIATION: "Müzakere",
+    CONTRACT: "Sözleşme",
+    SIGNING: "İmza",
     WON: "Kazanıldı",
     LOST: "Kaybedildi",
   };

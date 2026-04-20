@@ -759,6 +759,149 @@ async function main() {
 
   console.log("✓ Marketing content data (6 items)");
 
+  // ============================================================
+  // SATIŞ · 12 deals + 5 proposal templates (tasarım doc exact)
+  // ============================================================
+  const nis2026 = (d: number) => new Date(2026, 3, d, 10, 0);
+
+  await prisma.lead.createMany({
+    data: [
+      {
+        firmId: firm.id, title: "Garanti BBVA — Kurumsal hukuk danışmanlığı",
+        clientName: "Garanti BBVA", topic: "Kurumsal hukuk danışmanlığı",
+        source: "Referans", pricingModel: "Retainer ₺100K/ay",
+        stage: "NEGOTIATION", value: 1200000, probability: 75,
+        nextActionText: "22 Nis · Karar toplantısı", nextActionAt: nis2026(22),
+        assigneeName: "Mehmet",
+      },
+      {
+        firmId: firm.id, title: "Aksa Enerji — Rekabet Kurulu şikayet savunması",
+        clientName: "Aksa Enerji", topic: "Rekabet Kurulu şikayet savunması",
+        source: "Network", pricingModel: "Sabit ₺850K",
+        stage: "PROPOSAL", value: 858000, probability: 55,
+        nextActionText: "19 Nis · Teklif revize", nextActionAt: nis2026(19),
+        assigneeName: "Elif",
+      },
+      {
+        firmId: firm.id, title: "Sabancı Holding — M&A due diligence",
+        clientName: "Sabancı Holding", topic: "M&A due diligence",
+        source: "Referans", pricingModel: "Proje ₺2.4M",
+        stage: "MEETING", value: 2400000, probability: 68,
+        nextActionText: "24 Nis · Scope sunumu", nextActionAt: nis2026(24),
+        assigneeName: "Mehmet",
+      },
+      {
+        firmId: firm.id, title: "Trendyol — KVKK uyum revizyon",
+        clientName: "Trendyol", topic: "KVKK uyum revizyon",
+        source: "Web", pricingModel: "Retainer ₺40K/ay",
+        stage: "CONTRACT", value: 488000, probability: 88,
+        nextActionText: "İç onay bekleniyor",
+        assigneeName: "Elif",
+      },
+      {
+        firmId: firm.id, title: "BSH Türkiye — İş hukuku savunma (7 dosya)",
+        clientName: "BSH Türkiye", topic: "İş hukuku savunma (7 dosya)",
+        source: "Referans", pricingModel: "Dosya bazlı",
+        stage: "SIGNING", value: 398000, probability: 95,
+        nextActionText: "Müvekkil e-imzası",
+        assigneeName: "Elif",
+      },
+      {
+        firmId: firm.id, title: "Teknosa — Tüketici davaları portföy",
+        clientName: "Teknosa", topic: "Tüketici davaları portföy",
+        source: "LinkedIn", pricingModel: "Saatlik",
+        stage: "QUALIFIED", value: 628000, probability: 42,
+        nextActionText: "20 Nis · Uygunluk toplantısı", nextActionAt: nis2026(20),
+        assigneeName: "Cem",
+      },
+      {
+        firmId: firm.id, title: "Migros — Ticari sözleşme yenileme",
+        clientName: "Migros", topic: "Ticari sözleşme yenileme",
+        source: "Etkinlik", pricingModel: "Sabit",
+        stage: "QUALIFIED", value: 188000, probability: 50,
+        nextActionText: "23 Nis · İlk görüşme", nextActionAt: nis2026(23),
+        assigneeName: "Zeynep",
+      },
+      {
+        firmId: firm.id, title: "Yapı Kredi — İcra takip portföyü",
+        clientName: "Yapı Kredi", topic: "İcra takip portföyü",
+        source: "Network", pricingModel: "Dosya bazlı",
+        stage: "NEW", value: 960000, probability: 30,
+        nextActionText: "21 Nis · İlk temas", nextActionAt: nis2026(21),
+        assigneeName: "Cem",
+      },
+      {
+        firmId: firm.id, title: "Nova Tekstil — Tahkim savunması",
+        clientName: "Nova Tekstil", topic: "Tahkim savunması",
+        source: "Referans", pricingModel: "Retainer + başarı primi",
+        stage: "NEGOTIATION", value: 1800000, probability: 62,
+        nextActionText: "25 Nis · Retainer müzakere", nextActionAt: nis2026(25),
+        assigneeName: "Mehmet",
+      },
+      {
+        firmId: firm.id, title: "Enerjisa — Düzenleme danışmanlığı",
+        clientName: "Enerjisa", topic: "Düzenleme danışmanlığı",
+        source: "E-bülten", pricingModel: "Retainer ₺60K/ay",
+        stage: "PROPOSAL", value: 720000, probability: 58,
+        nextActionText: "24 Nis · Teklif sunumu", nextActionAt: nis2026(24),
+        assigneeName: "Elif",
+      },
+      {
+        firmId: firm.id, title: "Ford Otosan — Tedarik zinciri uyum",
+        clientName: "Ford Otosan", topic: "Tedarik zinciri uyum",
+        source: "Referans", pricingModel: "Sabit",
+        stage: "WON", value: 348000, probability: 100,
+        nextActionText: "Operasyona devredildi",
+        assigneeName: "Mehmet",
+      },
+      {
+        firmId: firm.id, title: "Vestel — Patent savunma",
+        clientName: "Vestel", topic: "Patent savunma",
+        source: "LinkedIn", pricingModel: "Proje",
+        stage: "MEETING", value: 890000, probability: 60,
+        nextActionText: "26 Nis · Scope toplantısı", nextActionAt: nis2026(26),
+        assigneeName: "Cem",
+      },
+    ],
+  });
+
+  await prisma.proposalTemplate.createMany({
+    data: [
+      {
+        firmId: firm.id, name: "Kurumsal Danışmanlık — Retainer",
+        model: "RETAINER", sectionCount: 8, usageCount: 34,
+        lastUsedAt: daysAgo(3),
+        driveUrl: "https://drive.google.com/juris/templates/retainer",
+      },
+      {
+        firmId: firm.id, name: "Tek Seferlik Dava Savunması",
+        model: "FLAT_FEE", sectionCount: 6, usageCount: 28,
+        lastUsedAt: daysAgo(1),
+        driveUrl: "https://drive.google.com/juris/templates/flat",
+      },
+      {
+        firmId: firm.id, name: "M&A Due Diligence",
+        model: "PROJECT", sectionCount: 12, usageCount: 14,
+        lastUsedAt: daysAgo(7),
+        driveUrl: "https://drive.google.com/juris/templates/ma",
+      },
+      {
+        firmId: firm.id, name: "KVKK Uyum Paketi",
+        model: "RETAINER_PLUS_PROJECT", sectionCount: 10, usageCount: 22,
+        lastUsedAt: daysAgo(5),
+        driveUrl: "https://drive.google.com/juris/templates/kvkk",
+      },
+      {
+        firmId: firm.id, name: "İcra Takip Portföy",
+        model: "FILE_BASED", sectionCount: 5, usageCount: 8,
+        lastUsedAt: daysAgo(14),
+        driveUrl: "https://drive.google.com/juris/templates/icra",
+      },
+    ],
+  });
+
+  console.log("✓ Sales data (12 deals, 5 proposal templates)");
+
   console.log("✓ Demo data seeded");
   console.log("");
   console.log("Giriş bilgileri:");

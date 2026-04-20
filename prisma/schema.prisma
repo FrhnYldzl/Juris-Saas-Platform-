@@ -45,6 +45,7 @@ model Firm {
   resources        Resource[]
   resourceContacts ResourceContact[]
   resourceEvents   ResourceEvent[]
+  proposalTemplates ProposalTemplate[]
 
   @@map("firms")
 }
@@ -137,12 +138,14 @@ model VerificationToken {
 // ---------------- CRM: Leads & Contacts ----------------
 
 enum LeadStage {
-  NEW
-  QUALIFIED
-  MEETING
-  PROPOSAL
-  NEGOTIATION
-  WON
+  NEW            // Lead
+  QUALIFIED      // İlk Görüşme
+  MEETING        // Scope
+  PROPOSAL       // Teklif
+  NEGOTIATION    // Müzakere
+  CONTRACT       // Sözleşme (new for Sales pipeline)
+  SIGNING        // İmza (new for Sales pipeline)
+  WON            // Kazanıldı
   LOST
 }
 
@@ -183,12 +186,18 @@ model Lead {
   contactId   String?    @map("contact_id")
   ownerId     String?    @map("owner_id")
   title       String
-  source      String?    // "LinkedIn", "Referans", "Web", etc.
+  clientName      String?    @map("client_name")        // "Garanti BBVA" — display cache
+  topic           String?                                // "Kurumsal hukuk danışmanlığı"
+  source          String?                                // Referans / Network / LinkedIn / Web / Etkinlik / E-bülten
+  pricingModel    String?    @map("pricing_model")       // "Retainer ₺100K/ay", "Sabit", "Dosya bazlı"
   stage       LeadStage  @default(NEW)
   value       Decimal?   @db.Decimal(14, 2)
   currency    String     @default("TRY")
   probability Int        @default(20)
   expectedCloseAt DateTime? @map("expected_close_at")
+  nextActionText  String?    @map("next_action_text")    // "22 Nis · Karar toplantısı"
+  nextActionAt    DateTime?  @map("next_action_at")
+  assigneeName    String?    @map("assignee_name")       // cache for table/kanban
   description String?    @db.Text
   lostReason  String?    @map("lost_reason")
   createdAt   DateTime   @default(now()) @map("created_at")
@@ -201,6 +210,34 @@ model Lead {
   @@index([firmId])
   @@index([firmId, stage])
   @@map("leads")
+}
+
+// ---------------- Sales · Proposal Templates ----------------
+
+enum ProposalTemplateModel {
+  RETAINER
+  FLAT_FEE
+  PROJECT
+  RETAINER_PLUS_PROJECT
+  FILE_BASED
+}
+
+model ProposalTemplate {
+  id           String                 @id @default(cuid())
+  firmId       String                 @map("firm_id")
+  name         String
+  model        ProposalTemplateModel
+  sectionCount Int                    @map("section_count")
+  usageCount   Int                    @default(0) @map("usage_count")
+  lastUsedAt   DateTime?              @map("last_used_at")
+  driveUrl     String?                @map("drive_url")
+  createdAt    DateTime               @default(now()) @map("created_at")
+  updatedAt    DateTime               @updatedAt @map("updated_at")
+
+  firm Firm @relation(fields: [firmId], references: [id], onDelete: Cascade)
+
+  @@index([firmId])
+  @@map("proposal_templates")
 }
 
 // ---------------- Matters (Dosyalar) ----------------
