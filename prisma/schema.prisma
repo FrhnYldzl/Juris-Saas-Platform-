@@ -254,6 +254,23 @@ model Matter {
   openedAt       DateTime      @default(now()) @map("opened_at")
   closedAt       DateTime?     @map("closed_at")
   tags           String[]      @default([])
+  // Consulting (CONSULTING) extensions
+  consultingCategory String?   @map("consulting_category")
+  monthlyFee         Decimal?  @db.Decimal(14, 2) @map("monthly_fee")
+  progressPct        Int       @default(0) @map("progress_pct")
+  nextStepTitle      String?   @map("next_step_title")
+  nextStepAt         DateTime? @map("next_step_at")
+  driveFolderName    String?   @map("drive_folder_name")
+  // Dispute (LITIGATION / TAHKIM / etc.) extensions
+  disputeMethod      String?   @map("dispute_method")
+  disputeSubtype     String?   @map("dispute_subtype")
+  disputeValue       Decimal?  @db.Decimal(14, 2) @map("dispute_value")
+  nextActionType     String?   @map("next_action_type")
+  nextActionAt       DateTime? @map("next_action_at")
+  isUrgent           Boolean   @default(false) @map("is_urgent")
+  isPortfolio        Boolean   @default(false) @map("is_portfolio")
+  documentCount      Int       @default(0) @map("document_count")
+  leadAssigneeName   String?   @map("lead_assignee_name")
   createdAt      DateTime      @default(now()) @map("created_at")
   updatedAt      DateTime      @updatedAt @map("updated_at")
 

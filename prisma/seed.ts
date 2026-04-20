@@ -186,6 +186,192 @@ async function main() {
     },
   });
 
+  // ============================================================
+  // OPS · 6 Consulting + 9 Disputes — design doc exact match
+  // ============================================================
+  const opsClients = await Promise.all([
+    prisma.contact.create({ data: { firmId: firm.id, type: "COMPANY", name: "Koç Holding A.Ş.", companyName: "Koç Holding", isClient: true, email: "hukuk@koc.com.tr" } }),
+    prisma.contact.create({ data: { firmId: firm.id, type: "COMPANY", name: "Türk Telekom A.Ş.", companyName: "Türk Telekom", isClient: true, email: "compliance@tt.com.tr" } }),
+    prisma.contact.create({ data: { firmId: firm.id, type: "COMPANY", name: "Akbank T.A.Ş.", companyName: "Akbank", isClient: true, email: "legal@akbank.com" } }),
+    prisma.contact.create({ data: { firmId: firm.id, type: "COMPANY", name: "BioTech Lab", companyName: "BioTech Lab", isClient: true } }),
+    prisma.contact.create({ data: { firmId: firm.id, type: "COMPANY", name: "Pegasus Hava Yolları", companyName: "Pegasus", isClient: true } }),
+    prisma.contact.create({ data: { firmId: firm.id, type: "COMPANY", name: "Fevup Teknoloji", companyName: "Fevup", isClient: true } }),
+    prisma.contact.create({ data: { firmId: firm.id, type: "COMPANY", name: "Aksoy İnşaat A.Ş.", companyName: "Aksoy İnşaat", isClient: true } }),
+    prisma.contact.create({ data: { firmId: firm.id, type: "COMPANY", name: "BSH Türkiye", companyName: "BSH", isClient: true } }),
+    prisma.contact.create({ data: { firmId: firm.id, type: "COMPANY", name: "Nova İnşaat", companyName: "Nova İnşaat", isClient: true } }),
+    prisma.contact.create({ data: { firmId: firm.id, type: "COMPANY", name: "Zurich Sigorta", companyName: "Zurich Sigorta", isClient: true } }),
+    prisma.contact.create({ data: { firmId: firm.id, type: "INDIVIDUAL", name: "Yılmaz Ailesi", isClient: true } }),
+  ]);
+  const [
+    koc, tt, akbank, biotech, pegasus, fevup,
+    aksoyC, bshC, novaC, zurichC, yilmazC,
+  ] = opsClients;
+
+  const nis = (d: number, h = 10, m = 0) => new Date(2026, 3, d, h, m);  // Nisan
+  const may = (d: number, h = 10, m = 0) => new Date(2026, 4, d, h, m);  // Mayıs
+
+  // 6 Danışmanlık (CONSULTING type)
+  await prisma.matter.createMany({
+    data: [
+      {
+        firmId: firm.id, matterNumber: "2026-D01", title: "Koç Holding — Kurumsal Yönetim",
+        type: "CONSULTING", status: "ACTIVE", billingType: "RETAINER",
+        clientId: koc.id, consultingCategory: "Kurumsal Yönetim",
+        monthlyFee: 450000, progressPct: 72,
+        nextStepTitle: "Yönetim Kurulu sunumu", nextStepAt: nis(19),
+        driveFolderName: "KoçHolding-2026", documentCount: 14,
+        leadAssigneeName: "Elif K.",
+      },
+      {
+        firmId: firm.id, matterNumber: "2026-D02", title: "Türk Telekom — KVKK & Veri Koruma",
+        type: "CONSULTING", status: "ACTIVE", billingType: "RETAINER",
+        clientId: tt.id, consultingCategory: "KVKK & Veri Koruma",
+        monthlyFee: 680000, progressPct: 58,
+        nextStepTitle: "İlk denetim raporu", nextStepAt: nis(28),
+        driveFolderName: "TT-KVKK-2026", documentCount: 28,
+        leadAssigneeName: "Mehmet Y.",
+      },
+      {
+        firmId: firm.id, matterNumber: "2026-D03", title: "Akbank T.A.Ş. — Sözleşme Danışmanlığı",
+        type: "CONSULTING", status: "ACTIVE", billingType: "RETAINER",
+        clientId: akbank.id, consultingCategory: "Sözleşme Danışmanlığı",
+        monthlyFee: 380000, progressPct: 44,
+        nextStepTitle: "Master agreement revizyonu", nextStepAt: nis(22),
+        driveFolderName: "Akbank-Sozlesme-2026", documentCount: 36,
+        leadAssigneeName: "Cem A.",
+        isUrgent: true, // RISK
+      },
+      {
+        firmId: firm.id, matterNumber: "2026-D04", title: "BioTech Lab — Fikri Mülkiyet",
+        type: "CONSULTING", status: "ACTIVE", billingType: "RETAINER",
+        clientId: biotech.id, consultingCategory: "Fikri Mülkiyet Danışmanlığı",
+        monthlyFee: 220000, progressPct: 86,
+        nextStepTitle: "Patent portföy raporu", nextStepAt: nis(30),
+        driveFolderName: "BioTech-IP", documentCount: 22,
+        leadAssigneeName: "Cem A.",
+      },
+      {
+        firmId: firm.id, matterNumber: "2026-D05", title: "Pegasus Hava Yolları — Rekabet Uyum",
+        type: "CONSULTING", status: "ACTIVE", billingType: "RETAINER",
+        clientId: pegasus.id, consultingCategory: "Rekabet Uyum",
+        monthlyFee: 290000, progressPct: 31,
+        nextStepTitle: "Uyum programı taslağı", nextStepAt: may(5),
+        driveFolderName: "Pegasus-Uyum", documentCount: 9,
+        leadAssigneeName: "Elif K.",
+      },
+      {
+        firmId: firm.id, matterNumber: "2026-D06", title: "Fevup Teknoloji — M&A Due Diligence",
+        type: "CONSULTING", status: "ACTIVE", billingType: "FLAT_FEE",
+        flatFee: 1200000,
+        clientId: fevup.id, consultingCategory: "M&A Due Diligence",
+        progressPct: 92,
+        nextStepTitle: "Closing toplantısı", nextStepAt: nis(24),
+        driveFolderName: "Fevup-MA-2026", documentCount: 41,
+        leadAssigneeName: "Mehmet Y.",
+      },
+    ],
+  });
+
+  // 9 Uyuşmazlık (disputes)
+  await prisma.matter.createMany({
+    data: [
+      {
+        firmId: firm.id, matterNumber: "2026/412", title: "Aksoy İnşaat v. TOKİ",
+        type: "LITIGATION", status: "ACTIVE", billingType: "HOURLY",
+        clientId: aksoyC.id,
+        disputeMethod: "DAVA", disputeSubtype: "Tazminat Davası",
+        disputeValue: 8200000,
+        courtName: "Ankara 4. Asliye Ticaret M.", courtFileNo: "2026/412",
+        nextActionType: "Duruşma", nextActionAt: nis(16, 10, 30),
+        nextHearingAt: nis(16, 10, 30),
+        isUrgent: true, documentCount: 18, leadAssigneeName: "Mehmet",
+      },
+      {
+        firmId: firm.id, matterNumber: "2026/367", title: "Yılmaz v. Yılmaz",
+        type: "FAMILY", status: "ACTIVE", billingType: "FLAT_FEE",
+        clientId: yilmazC.id,
+        disputeMethod: "DAVA", disputeSubtype: "Boşanma & Mal Paylaşımı",
+        courtName: "İstanbul 8. Aile M.", courtFileNo: "2026/367",
+        nextActionType: "Duruşma", nextActionAt: new Date(new Date().setHours(14, 0, 0, 0)),
+        nextHearingAt: new Date(new Date().setHours(14, 0, 0, 0)),
+        isUrgent: true, documentCount: 24, leadAssigneeName: "Zeynep",
+      },
+      {
+        firmId: firm.id, matterNumber: "2026/341", title: "BioTech v. MedCorp",
+        type: "LITIGATION", status: "ACTIVE", billingType: "HOURLY",
+        clientId: biotech.id,
+        disputeMethod: "DAVA", disputeSubtype: "Patent İhlali",
+        disputeValue: 1200000,
+        courtName: "İstanbul FSHHM", courtFileNo: "2026/341",
+        nextActionType: "Bilirkişi İncelemesi", nextActionAt: nis(22),
+        documentCount: 32, leadAssigneeName: "Cem",
+      },
+      {
+        firmId: firm.id, matterNumber: "2026/276", title: "BSH v. 14 işçi",
+        type: "LABOR", status: "ACTIVE", billingType: "HOURLY",
+        clientId: bshC.id,
+        disputeMethod: "DAVA", disputeSubtype: "İşçilik Alacakları",
+        disputeValue: 380000,
+        courtName: "İstanbul 12. İş M.", courtFileNo: "2026/276",
+        nextActionType: "Tanık Dinleme", nextActionAt: nis(30),
+        documentCount: 15, leadAssigneeName: "Elif",
+      },
+      {
+        firmId: firm.id, matterNumber: "2026/234", title: "Akbank v. Muhtelif (34 borçlu)",
+        type: "LITIGATION", status: "ACTIVE", billingType: "FLAT_FEE",
+        clientId: akbank.id,
+        disputeMethod: "ICRA", disputeSubtype: "Kredi Takibi",
+        disputeValue: 2400000,
+        courtName: "Muhtelif İcra M.", courtFileNo: "2026/234",
+        nextActionType: "Haciz İşlemi", isPortfolio: true,
+        documentCount: 87, leadAssigneeName: "Cem",
+      },
+      {
+        firmId: firm.id, matterNumber: "2026/198", title: "Pegasus v. 428 yolcu",
+        type: "LITIGATION", status: "ACTIVE", billingType: "FLAT_FEE",
+        clientId: pegasus.id,
+        disputeMethod: "DAVA", disputeSubtype: "Tüketici Tazminatı",
+        disputeValue: 520000,
+        courtName: "İstanbul 6. Tük. M.", courtFileNo: "2026/198",
+        nextActionType: "Toplu Duruşma", nextActionAt: may(5),
+        nextHearingAt: may(5), isPortfolio: true,
+        documentCount: 62, leadAssigneeName: "Zeynep",
+      },
+      {
+        firmId: firm.id, matterNumber: "ISTAC-2026/12", title: "Nova İnşaat v. Yıldız",
+        type: "LITIGATION", status: "ACTIVE", billingType: "HOURLY",
+        clientId: novaC.id,
+        disputeMethod: "TAHKIM", disputeSubtype: "Sözleşme İhlali",
+        disputeValue: 3400000,
+        courtName: "ISTAC", courtFileNo: "ISTAC-2026/12",
+        nextActionType: "Beyan Sunma", nextActionAt: nis(18),
+        isUrgent: true, documentCount: 19, leadAssigneeName: "Mehmet",
+      },
+      {
+        firmId: firm.id, matterNumber: "SAHK-2026/88", title: "Zurich Sigorta v. Demir",
+        type: "LITIGATION", status: "ACTIVE", billingType: "HOURLY",
+        clientId: zurichC.id,
+        disputeMethod: "SIGORTA_TAHKIM", disputeSubtype: "Kasko Tazminat",
+        disputeValue: 140000,
+        courtName: "SAHK", courtFileNo: "SAHK-2026/88",
+        nextActionType: "Yazılı Savunma", nextActionAt: nis(20),
+        isUrgent: true, documentCount: 8, leadAssigneeName: "Elif",
+      },
+      {
+        firmId: firm.id, matterNumber: "İht-2026/14", title: "Juris → Ay Tekstil",
+        type: "OTHER", status: "ON_HOLD", billingType: "FLAT_FEE",
+        clientId: demoClient.id,
+        disputeMethod: "IHTARNAME", disputeSubtype: "Alacak Talebi",
+        disputeValue: 95000,
+        courtName: "Noter", courtFileNo: "İht-2026/14",
+        nextActionType: "Cevap süresi", nextActionAt: nis(25),
+        documentCount: 3, leadAssigneeName: "Cem",
+      },
+    ],
+  });
+
+  console.log("✓ Ops data: 6 danışmanlık + 9 uyuşmazlık seeded");
+
   // Leads
   await prisma.lead.create({
     data: {
