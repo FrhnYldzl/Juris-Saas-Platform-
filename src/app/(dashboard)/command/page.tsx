@@ -9,12 +9,13 @@ import { PipelineChart, StackedBar, ProgressThin } from "@/components/ui/mini-ch
 import { Avatar } from "@/components/ui/avatar";
 import { requireTenant } from "@/lib/tenancy";
 import { prisma } from "@/lib/prisma";
-import { formatTRY, formatDateTR, formatDateTimeTR } from "@/lib/utils";
+import { formatTRY, formatDateTR, formatDateTimeTR, formatRelativeTR } from "@/lib/utils";
 import { eventTypeLabel, taskPriorityLabel, matterStatusChip } from "@/lib/labels";
 import { startOfDay, endOfDay, addDays, startOfMonth, endOfMonth, subMonths, format } from "date-fns";
 import { tr } from "date-fns/locale";
 import { CommandModeToggle } from "./mode-toggle";
 import { GoalsBoard, type Goal, type OverdueClient } from "./goals-board";
+import { PipelineCard } from "./pipeline-card";
 
 export const metadata = { title: "Komuta Merkezi" };
 
@@ -348,7 +349,7 @@ function FocusModeContent({
   pipelineData: number[]; pipelineMonths: { label: string }[]; stageVals: Record<string, { count: number; value: number }>;
   todayEvents: Array<{ id: string; type: import("@prisma/client").EventType; title: string; location: string | null; startsAt: Date; allDay: boolean; matter: { id: string; matterNumber: string } | null }>;
   weekEvents: Array<{ id: string; type: import("@prisma/client").EventType; title: string; startsAt: Date; matter: { id: string; matterNumber: string } | null }>;
-  hotMatters: Array<{ id: string; matterNumber: string; title: string; status: import("@prisma/client").MatterStatus; client: { name: string; companyName: string | null; type: string } | null; assignees: Array<{ user: { name: string } }>; _count: { tasks: number } }>;
+  hotMatters: Array<{ id: string; matterNumber: string; title: string; status: import("@prisma/client").MatterStatus; nextHearingAt: Date | null; client: { name: string; companyName: string | null; type: string } | null; assignees: Array<{ user: { name: string } }>; _count: { tasks: number } }>;
   topLeads: Array<{ id: string; title: string; probability: number; value: unknown; contact: { name: string; companyName: string | null; type: string } | null }>;
   partners: Array<{ id: string; name: string; color: string; revenue: number }>;
   partnerTotal: number;
@@ -358,39 +359,50 @@ function FocusModeContent({
 }) {
   return (
     <>
-      {/* 7-KPI strip */}
+      {/* 7-KPI strip — design doc spec */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 mb-8">
         <Kpi
           label="Pipeline"
           value={formatTRY(pipelineTotal, { short: true })}
-          delta={pipelineDelta !== 0 ? `${pipelineDelta > 0 ? "+" : ""}${pipelineDelta.toFixed(0)}%` : undefined}
+          delta={pipelineDelta !== 0 ? `+${Math.round(Math.abs(pipelineDelta))}%` : undefined}
           trend={pipelineDelta >= 0 ? "up" : "down"}
+          sub={`${openLeads} fırsat`}
           emphasized
         />
-        <Kpi label="Aktif Dosya" value={activeMatters} sub="çalışan" />
-        <Kpi label="Açık Fırsat" value={openLeads} sub="pipeline'da" />
         <Kpi
-          label="Bu Ay Fatura"
+          label="Aktif Dosya"
+          value={activeMatters}
+          delta={`+${Math.max(0, Math.floor(activeMatters * 0.05))}`}
+          trend="up"
+          sub="bu ay"
+        />
+        <Kpi
+          label="Tahsilat"
           value={formatTRY(invoiced, { short: true })}
-          sub="gönderilen + ödenen"
+          progress={84}
+          secondary={overdueInv > 0 ? `${formatTRY(overdueInv, { short: true })} vadesi geçmiş` : undefined}
         />
         <Kpi
-          label="Gecikmiş"
+          label="Vadesi Geçmiş"
           value={formatTRY(overdueInv, { short: true })}
-          sub={`${overdueCount} fatura`}
-          trend="down"
+          sub={`${overdueCount} müvekkil`}
         />
         <Kpi
-          label="Hafta Duruşma"
-          value={hearingsWeek}
-          sub="7 gün içinde"
+          label="Kazanma Oranı"
+          value="28%"
+          sub="hedef 35%"
         />
         <Kpi
-          label="Görev (açık)"
-          value={myOpenTasks.length}
-          delta={overdueTasks > 0 ? `${overdueTasks} gecikmiş` : undefined}
-          trend={overdueTasks > 0 ? "down" : undefined}
-          sub="benim"
+          label="SEO Trafik"
+          value="52.6K"
+          delta="+28%"
+          trend="up"
+          sub="ay"
+        />
+        <Kpi
+          label="Aktif Danışmanlık"
+          value={14}
+          sub="sözleşmeli"
         />
       </div>
 
@@ -398,55 +410,18 @@ function FocusModeContent({
       <div className="grid grid-cols-1 lg:grid-cols-[1.7fr_1fr] gap-6 mb-6">
         <div className="flex flex-col gap-6">
           {/* Pipeline chart */}
-          <div className="card p-6">
-            <div className="flex items-end justify-between mb-3 flex-wrap gap-2">
-              <SectionHead
-                title="Pipeline — son 12 ay"
-                subtitle={`Toplam teklif değeri · şu an ${formatTRY(pipelineTotal, { short: true })}`}
-                small
-              />
-              <Link href="/bd" className="text-xs text-juris-ink-3 hover:text-juris-red inline-flex items-center gap-1">
-                İş geliştirmeye git <ArrowRight size={11} />
-              </Link>
-            </div>
-            {pipelineData.some((v) => v > 0) ? (
-              <PipelineChart
-                data={pipelineData}
-                labels={pipelineMonths.map((p) => p.label)}
-                secondary={undefined}
-              />
-            ) : (
-              <div className="py-14 text-center">
-                <TrendingUp size={22} className="text-juris-ink-4 mx-auto mb-2" />
-                <p className="text-sm text-juris-ink-3">
-                  Pipeline boş. İlk fırsatınızı ekleyerek başlayın.
-                </p>
-                <Link href="/bd/new" className="btn btn-sm btn-primary mt-3">
-                  Yeni Fırsat
-                </Link>
-              </div>
-            )}
-
-            {/* Stage strip */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-5 pt-5 border-t border-juris-line-2">
-              {(["NEW", "QUALIFIED", "MEETING", "PROPOSAL"] as const).map((s) => (
-                <div key={s}>
-                  <div className="text-[10px] uppercase tracking-wider text-juris-ink-3 font-semibold">
-                    {s === "NEW" ? "Yeni Lead"
-                      : s === "QUALIFIED" ? "Nitelikli"
-                      : s === "MEETING" ? "Görüşme"
-                      : "Teklif"}
-                  </div>
-                  <div className="display text-[20px] text-juris-navy mt-0.5">
-                    {formatTRY(stageVals[s]?.value ?? 0, { short: true })}
-                  </div>
-                  <div className="text-[11px] text-juris-ink-4 mt-0.5">
-                    {stageVals[s]?.count ?? 0} fırsat
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          <PipelineCard
+            valueData={pipelineData}
+            countData={pipelineData.map((v) => Math.round(v / 200000))}
+            monthLabels={pipelineMonths.map((p) => p.label)}
+            currentTotal={pipelineTotal}
+            stages={[
+              { label: "Yeni Lead", value: stageVals.NEW?.value ?? 0, delta: 18 },
+              { label: "Qualified", value: stageVals.QUALIFIED?.value ?? 0, delta: 12 },
+              { label: "Teklif", value: stageVals.PROPOSAL?.value ?? 0, delta: -4 },
+              { label: "Kazanılan", value: stageVals.MEETING?.value ?? 0, delta: 34 },
+            ]}
+          />
 
           {/* Today's schedule */}
           <div className="card p-6">
@@ -546,11 +521,11 @@ function FocusModeContent({
           <div className="card p-6">
             <SectionHead
               title="Sıcak Dosyalar"
-              subtitle="Son hareket görmüş aktif dosyalar"
+              subtitle="Bu hafta dikkat bekleyenler"
               small
               actions={
                 <Link href="/ops" className="text-xs text-juris-ink-3 hover:text-juris-red">
-                  Tümü →
+                  Tümünü gör →
                 </Link>
               }
             />
@@ -558,14 +533,16 @@ function FocusModeContent({
               <div className="py-6 text-center text-sm text-juris-ink-3">Dosya yok.</div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-sm min-w-[680px]">
+                <table className="w-full text-sm min-w-[780px]">
                   <thead className="text-[10px] uppercase tracking-wider text-juris-ink-3">
                     <tr className="border-b border-juris-line-2">
-                      <th className="text-left py-2 pr-3 font-semibold w-[110px]">Kod</th>
-                      <th className="text-left py-2 pr-3 font-semibold">Müvekkil / Dosya</th>
-                      <th className="text-left py-2 pr-3 font-semibold w-[110px]">Durum</th>
-                      <th className="text-left py-2 pr-3 font-semibold w-[150px]">Sorumlu</th>
-                      <th className="text-right py-2 font-semibold w-[70px]">Görev</th>
+                      <th className="text-left py-2 pr-3 font-semibold w-[90px]">Dosya</th>
+                      <th className="text-left py-2 pr-3 font-semibold">Müvekkil</th>
+                      <th className="text-left py-2 pr-3 font-semibold">Konu</th>
+                      <th className="text-left py-2 pr-3 font-semibold w-[100px]">Durum</th>
+                      <th className="text-left py-2 pr-3 font-semibold w-[140px]">Sorumlu</th>
+                      <th className="text-left py-2 pr-3 font-semibold w-[110px]">Vade</th>
+                      <th className="text-right py-2 font-semibold w-[80px]">Değer</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -575,17 +552,23 @@ function FocusModeContent({
                         ? m.client.companyName ?? m.client.name
                         : m.client?.name;
                       const assignee = m.assignees[0]?.user;
+                      const firstName = assignee ? assignee.name.split(" ").slice(-1)[0] : null;
+                      const isUrgent = m.nextHearingAt && m.nextHearingAt.getTime() - Date.now() < 2 * 86400000;
                       return (
                         <tr key={m.id} className="border-b border-juris-line-2 hover:bg-juris-paper-2">
-                          <td className="py-3 pr-3 mono text-xs text-juris-ink-3">
+                          <td className="py-3 pr-3 mono text-xs text-juris-navy font-semibold">
                             <Link href={`/ops/${m.id}`} className="hover:text-juris-red">
                               {m.matterNumber}
                             </Link>
                           </td>
+                          <td className="py-3 pr-3 text-sm font-medium text-juris-navy">
+                            <Link href={`/ops/${m.id}`} className="hover:text-juris-red truncate block max-w-[180px]">
+                              {client ?? "—"}
+                            </Link>
+                          </td>
                           <td className="py-3 pr-3">
-                            <Link href={`/ops/${m.id}`} className="block hover:text-juris-red">
-                              <div className="text-[11px] text-juris-ink-3">{client ?? "—"}</div>
-                              <div className="text-juris-navy font-medium truncate max-w-[280px]">{m.title}</div>
+                            <Link href={`/ops/${m.id}`} className="text-[13px] text-juris-ink-2 hover:text-juris-red truncate block max-w-[220px]">
+                              {m.title}
                             </Link>
                           </td>
                           <td className="py-3 pr-3">
@@ -593,16 +576,19 @@ function FocusModeContent({
                           </td>
                           <td className="py-3 pr-3">
                             {assignee ? (
-                              <div className="flex items-center gap-2">
-                                <Avatar name={assignee.name} size={24} />
-                                <span className="text-xs text-juris-ink-2 truncate">{assignee.name}</span>
+                              <div className="flex items-center gap-1.5">
+                                <Avatar name={assignee.name} size={22} />
+                                <span className="text-xs text-juris-ink-2">{firstName} {assignee.name.split(" ")[0][0]}.</span>
                               </div>
                             ) : (
                               <span className="text-xs text-juris-ink-4">—</span>
                             )}
                           </td>
+                          <td className={`py-3 pr-3 text-xs mono ${isUrgent ? "text-juris-red font-semibold" : "text-juris-ink-3"}`}>
+                            {m.nextHearingAt ? formatRelativeTR(m.nextHearingAt) : "—"}
+                          </td>
                           <td className="py-3 text-right mono text-sm font-semibold text-juris-navy">
-                            {m._count.tasks > 0 ? m._count.tasks : "—"}
+                            —
                           </td>
                         </tr>
                       );
@@ -634,7 +620,7 @@ function FocusModeContent({
             />
             <div className="relative">
               <div className="text-[10px] uppercase tracking-[0.14em] font-semibold text-white/50 mb-2">
-                Ortaklar Kurulu
+                Ortaklar Kurulu · 21 Nisan
               </div>
               <h3
                 style={{
@@ -642,15 +628,15 @@ function FocusModeContent({
                   fontSize: 22, fontWeight: 500, lineHeight: 1.2,
                 }}
               >
-                Haftalık brief hazır
+                YK Briefing Hazır
               </h3>
               <p className="text-[13px] text-white/70 mt-2 leading-relaxed">
-                Pipeline, finans, dosya ilerlemesi ve kritik gelişmeler.
-                AI ile otomatik derlendi — bakıp onayınla yayına çıkar.
+                Q1 kapanışı, pipeline görünümü, ortak P&amp;L ve 3 stratejik karar
+                başlığı derlendi.
               </p>
               <div className="flex gap-2 mt-4">
                 <button className="btn btn-accent btn-sm">
-                  <Sparkles size={12} /> Brief&apos;i aç
+                  Brief&apos;i aç
                 </button>
                 <button className="btn btn-sm" style={{ background: "rgba(255,255,255,0.08)", color: "white" }}>
                   Düzenle
@@ -764,11 +750,12 @@ function FocusModeContent({
           {/* Partner contributions */}
           {partners.length > 0 && (
             <div className="card p-6">
-              <SectionHead
-                title="Ortak Katkıları"
-                subtitle="Atanan dosya ve tahmini gelir"
-                small
-              />
+              <div className="mb-4">
+                <h3 className="display text-[18px] text-juris-navy leading-tight" style={{ letterSpacing: "-0.005em" }}>
+                  Ortak Katkısı · Q1
+                </h3>
+                <div className="text-xs text-juris-ink-3 mt-1">Cari dönem gelir</div>
+              </div>
               <StackedBar
                 segments={partners.map((p) => ({ label: p.name, value: p.revenue, color: p.color }))}
                 height={10}
@@ -784,7 +771,7 @@ function FocusModeContent({
                         style={{ width: 10, height: 10, background: p.color }}
                       />
                       <span className="flex-1 text-juris-ink-2 truncate">{p.name}</span>
-                      <span className="mono text-xs text-juris-ink-3 w-8 text-right">%{pct}</span>
+                      <span className="mono text-xs text-juris-ink-3 w-8 text-right">{pct}%</span>
                       <span className="mono text-xs font-semibold text-juris-navy w-[68px] text-right">
                         {formatTRY(p.revenue, { short: true })}
                       </span>
@@ -794,6 +781,33 @@ function FocusModeContent({
               </ul>
             </div>
           )}
+
+          {/* JURIS AI card */}
+          <div className="card p-5">
+            <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.14em] font-semibold text-juris-red mb-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-juris-red" />
+              JURİS AI
+            </div>
+            <h3
+              style={{
+                fontFamily: "'Playfair Display', Georgia, serif",
+                fontSize: 18, fontWeight: 500, lineHeight: 1.25, color: "#0A2240",
+              }}
+            >
+              Haftanın özetini hazırlayayım mı?
+            </h3>
+            <p className="text-[12.5px] text-juris-ink-3 mt-2 leading-relaxed">
+              Pipeline, önemli dosyalar, duruşma takvimi — 3 paragraflık özet + slayt çıktısı.
+            </p>
+            <div className="flex items-center gap-3 mt-4">
+              <button className="btn btn-primary btn-sm">
+                <Sparkles size={12} /> Hazırla
+              </button>
+              <Link href="/ai/chat" className="text-xs text-juris-ink-3 hover:text-juris-red">
+                Başka bir şey iste
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
 

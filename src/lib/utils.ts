@@ -33,6 +33,35 @@ export function formatDateTimeTR(date: Date | string | null | undefined) {
   });
 }
 
+/**
+ * Relative date in Turkish — "Bugün", "Yarın", "3 gün", "1 hafta", "25 Mar" fallback.
+ */
+export function formatRelativeTR(date: Date | string | null | undefined): string {
+  if (!date) return "—";
+  const d = typeof date === "string" ? new Date(date) : date;
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const target = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const diffDays = Math.round((target.getTime() - today.getTime()) / 86400000);
+
+  if (diffDays === 0) {
+    // Today — include hour if not midnight
+    const hh = d.getHours();
+    const mm = d.getMinutes();
+    if (hh !== 0 || mm !== 0) {
+      return `Bugün ${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
+    }
+    return "Bugün";
+  }
+  if (diffDays === 1) return "Yarın";
+  if (diffDays === -1) return "Dün";
+  if (diffDays > 1 && diffDays <= 6) return `${diffDays} gün`;
+  if (diffDays === 7) return "1 hafta";
+  if (diffDays > 7 && diffDays <= 14) return `${Math.round(diffDays / 7)} hafta`;
+  if (diffDays < 0 && diffDays >= -6) return `${Math.abs(diffDays)} gün önce`;
+  return formatDateTR(d);
+}
+
 export function initials(name: string | null | undefined) {
   if (!name) return "?";
   return name
