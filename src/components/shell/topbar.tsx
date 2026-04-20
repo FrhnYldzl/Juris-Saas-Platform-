@@ -1,10 +1,11 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { Bell, ChevronRight, LogOut } from "lucide-react";
+import { ChevronRight, LogOut } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { Avatar } from "@/components/ui/avatar";
 import { PAGE_TITLES } from "./nav-config";
+import { NotificationCenter } from "./notification-center";
 import { useState } from "react";
 
 interface TopbarProps {
@@ -44,13 +45,7 @@ export function Topbar({ user }: TopbarProps) {
       </div>
 
       <div className="flex items-center gap-1.5">
-        <button
-          className="juris-icon-btn bg-transparent border border-transparent p-[7px] cursor-pointer rounded-[5px] text-juris-ink-2 relative hover:bg-juris-navy-100"
-          aria-label="Bildirimler"
-        >
-          <Bell size={16} />
-          <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-juris-red" />
-        </button>
+        <NotificationCenter />
         <div className="w-px h-6 bg-juris-line mx-1" />
         <div className="relative">
           <button

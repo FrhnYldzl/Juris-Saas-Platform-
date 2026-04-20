@@ -218,3 +218,50 @@
   }
 }
 
+/* ---------------------------------------------------------------
+   Tweaks panel effects — live per-user preferences
+   Toggled via <body data-density/accent/serif> in tweaks-panel.tsx
+--------------------------------------------------------------- */
+
+/* Density: compact shrinks card padding + body font */
+body[data-density="compact"] .card {
+  padding: 14px 16px;
+}
+body[data-density="compact"] main {
+  font-size: 13px;
+}
+body[data-density="compact"] h1,
+body[data-density="compact"] h2,
+body[data-density="compact"] h3 {
+  line-height: 1.15;
+}
+
+/* Accent intensity — overrides --juris-red + accent derivatives */
+body[data-accent="subtle"] {
+  --juris-red: #8f1f1d;
+  --accent: #8f1f1d;
+  --accent-ink: #6f1a18;
+  --red-06: rgba(143, 31, 29, 0.06);
+  --red-10: rgba(143, 31, 29, 0.1);
+}
+body[data-accent="bold"] {
+  --juris-red: #d14844;
+  --accent: #d14844;
+  --accent-ink: #a82b28;
+  --red-06: rgba(209, 72, 68, 0.09);
+  --red-10: rgba(209, 72, 68, 0.15);
+}
+
+/* Serif toggle — when OFF, section headings switch to sans */
+body[data-serif="off"] .display,
+body[data-serif="off"] h1,
+body[data-serif="off"] h2,
+body[data-serif="off"] h3,
+body[data-serif="off"] h4,
+body[data-serif="off"] h5 {
+  font-family: var(--font-inter), Inter, -apple-system, BlinkMacSystemFont, sans-serif !important;
+  font-style: normal !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.02em !important;
+}
+

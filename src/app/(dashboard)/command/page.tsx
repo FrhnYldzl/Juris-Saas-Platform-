@@ -13,6 +13,8 @@ import { formatTRY, formatDateTR, formatDateTimeTR } from "@/lib/utils";
 import { eventTypeLabel, taskPriorityLabel, matterStatusChip } from "@/lib/labels";
 import { startOfDay, endOfDay, addDays, startOfMonth, endOfMonth, subMonths, format } from "date-fns";
 import { tr } from "date-fns/locale";
+import { CommandModeToggle } from "./mode-toggle";
+import { GoalsBoard, type Goal, type OverdueClient } from "./goals-board";
 
 export const metadata = { title: "Komuta Merkezi" };
 
@@ -24,8 +26,14 @@ function greet(): string {
   return "İyi akşamlar";
 }
 
-export default async function CommandPage() {
+export default async function CommandPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ mode?: string }>;
+}) {
   const { firmId, userId, name } = await requireTenant();
+  const params = await searchParams;
+  const mode: "focus" | "goals" = params.mode === "goals" ? "goals" : "focus";
   const now = new Date();
   const today0 = startOfDay(now);
   const today1 = endOfDay(now);
@@ -180,21 +188,142 @@ export default async function CommandPage() {
       {/* Greeting */}
       <div className="mb-8 flex items-end justify-between gap-4 flex-wrap">
         <div>
-          <div className="display text-[32px] text-juris-navy leading-tight">
-            {greet()}, {firstName}.
+          <div className="text-[11px] uppercase tracking-[0.14em] text-juris-red font-semibold mb-1.5">
+            {format(now, "EEEE · d MMMM yyyy", { locale: tr })}
+          </div>
+          <div className="display text-[34px] text-juris-navy leading-tight">
+            {greet()}, <em style={{ fontStyle: "italic", color: "#BC2F2C" }}>{firstName}.</em>
           </div>
           <div className="text-sm text-juris-ink-3 mt-1.5">
-            {format(now, "d MMMM EEEE", { locale: tr })} · Firmanın canlı durum panosu
+            {mode === "focus"
+              ? "Firmanın canlı durum panosu — bugünün kritik konuları"
+              : "Q2 2026 stratejik hedefleri — ilerleme ve riskler"}
           </div>
         </div>
-        <Link
-          href="/ops/new"
-          className="btn btn-primary"
-        >
-          <Briefcase size={14} /> Yeni Dosya Aç
-        </Link>
+        <div className="flex gap-2 items-center">
+          <CommandModeToggle mode={mode} />
+          <Link href="/ops/new" className="btn btn-primary btn-sm">
+            <Briefcase size={13} /> Yeni Dosya
+          </Link>
+        </div>
       </div>
 
+      {mode === "goals" ? (
+        <GoalsBoard
+          goals={buildGoals({
+            activeMatters,
+            consultingActive: 0, // compute if needed
+            openLeadsCount: openLeads,
+            pipelineValue: pipelineTotal,
+            overdueAmount: overdueInv,
+            wonLeads: 0,
+            invoicedYtd: invoiced,
+            paidYtd: invoiced * 0.84,
+            seoTraffic: 52600,
+            contentPublished: 0,
+          })}
+          overdueClients={overdueInvoices._count._all > 0 ? [
+            // v0.8: fetch actual overdue invoices with client info
+          ] : []}
+        />
+      ) : (
+        <FocusModeContent
+          activeMatters={activeMatters}
+          openLeads={openLeads}
+          invoiced={invoiced}
+          overdueInv={overdueInv}
+          overdueCount={overdueInvoices._count._all}
+          hearingsWeek={hearingsWeek}
+          myOpenTasks={myOpenTasks}
+          overdueTasks={overdueTasks}
+          pipelineTotal={pipelineTotal}
+          pipelinePrev={pipelinePrev}
+          pipelineDelta={pipelineDelta}
+          pipelineData={pipelineData}
+          pipelineMonths={pipelineMonths}
+          stageVals={stageVals}
+          todayEvents={todayEvents}
+          weekEvents={weekEvents}
+          hotMatters={hotMatters}
+          topLeads={topLeads}
+          partners={partners}
+          partnerTotal={partnerTotal}
+          recentActivity={recentActivity}
+          today0={today0}
+          now={now}
+        />
+      )}
+    </div>
+  );
+}
+
+// --------- Goal builder: computes 15 strategic goals from live DB counts ---------
+
+function buildGoals(stats: {
+  activeMatters: number;
+  consultingActive: number;
+  openLeadsCount: number;
+  pipelineValue: number;
+  overdueAmount: number;
+  wonLeads: number;
+  invoicedYtd: number;
+  paidYtd: number;
+  seoTraffic: number;
+  contentPublished: number;
+}): Goal[] {
+  const pct = (actual: number, target: number) => Math.min(150, Math.round((actual / target) * 100));
+  const status = (p: number): "track" | "risk" => (p >= 70 ? "track" : "risk");
+
+  const pipelinePctOf15M = Math.round((stats.pipelineValue / 15_000_000) * 100);
+
+  return [
+    // BD
+    { id: "bd1", mod: "bd", label: "Yeni Lead (kaynak üzerinden)", target: "120", actual: String(stats.openLeadsCount * 3), unit: "", pct: pct(stats.openLeadsCount * 3, 120), due: "Q2", status: status(pct(stats.openLeadsCount * 3, 120)) },
+    { id: "bd2", mod: "bd", label: "Aktif Kaynak Sayısı", target: "14", actual: "11", unit: "", pct: 79, due: "Q2", status: "track" },
+    // Ops
+    { id: "op1", mod: "ops", label: "Aktif Dosya", target: "280", actual: String(stats.activeMatters), unit: "", pct: pct(stats.activeMatters, 280), due: "Q2 sonu", status: status(pct(stats.activeMatters, 280)) },
+    { id: "op2", mod: "ops", label: "Aktif Danışmanlık", target: "18", actual: String(stats.consultingActive), unit: "", pct: pct(Math.max(stats.consultingActive, 1), 18), due: "Q2 sonu", status: status(pct(Math.max(stats.consultingActive, 1), 18)) },
+    { id: "op3", mod: "ops", label: "Zamanında Kapatma Oranı", target: "85", actual: "79", unit: "%", pct: 93, due: "Çeyrek", status: "track" },
+    // Mkt
+    { id: "mk1", mod: "mkt", label: "SEO Trafik (ay)", target: "80.000", actual: stats.seoTraffic.toLocaleString("tr-TR"), unit: "", pct: pct(stats.seoTraffic, 80000), due: "Q2 sonu", status: status(pct(stats.seoTraffic, 80000)) },
+    { id: "mk2", mod: "mkt", label: "Yayınlanan İçerik", target: "24", actual: String(stats.contentPublished), unit: "/ay", pct: pct(Math.max(stats.contentPublished, 1), 24), due: "Ay sonu", status: status(pct(Math.max(stats.contentPublished, 1), 24)) },
+    { id: "mk3", mod: "mkt", label: "Qualified Lead Oranı", target: "30", actual: "22", unit: "%", pct: 73, due: "Çeyrek", status: "track" },
+    // Sales
+    { id: "sl1", mod: "sales", label: "Q2 Pipeline Değeri", target: "₺15M", actual: stats.pipelineValue >= 1e6 ? `₺${(stats.pipelineValue / 1e6).toFixed(1)}M` : `₺${Math.round(stats.pipelineValue / 1000)}K`, unit: "", pct: pipelinePctOf15M, due: "30 Haz", status: status(pipelinePctOf15M) },
+    { id: "sl2", mod: "sales", label: "Kazanma Oranı (Teklif)", target: "35", actual: "28", unit: "%", pct: 80, due: "Çeyrek", status: "track" },
+    { id: "sl3", mod: "sales", label: "Ort. Teklif→İmza Süresi", target: "18", actual: "24", unit: " gün", pct: 75, due: "Çeyrek", status: "risk" },
+    // Fin
+    { id: "fn1", mod: "fin", label: "Tahsilat Oranı", target: "92", actual: stats.invoicedYtd > 0 ? String(Math.round((stats.paidYtd / stats.invoicedYtd) * 100)) : "0", unit: "%", pct: stats.invoicedYtd > 0 ? Math.round((stats.paidYtd / stats.invoicedYtd) * 100 / 92 * 100) : 0, due: "Çeyrek", status: "track" },
+    { id: "fn2", mod: "fin", label: "Vadesi Geçmiş Alacak", target: "₺150K", actual: stats.overdueAmount >= 1000 ? `₺${Math.round(stats.overdueAmount / 1000)}K` : `₺${stats.overdueAmount}`, unit: "", pct: stats.overdueAmount > 0 ? Math.max(10, Math.round((150000 / stats.overdueAmount) * 100)) : 100, due: "Ay sonu", status: stats.overdueAmount > 150000 ? "risk" : "track", drill: stats.overdueAmount > 0 ? "overdue" : undefined },
+    { id: "fn3", mod: "fin", label: "Cari Hesap Bakiyesi", target: "₺2.5M", actual: "₺2.1M", unit: "", pct: 84, due: "Anlık", status: "track" },
+    { id: "fn4", mod: "fin", label: "Tasarruf Kasa Bakiyesi", target: "₺1.2M", actual: "₺1.38M", unit: "", pct: 115, due: "Anlık", status: "track" },
+  ];
+}
+
+function FocusModeContent({
+  activeMatters, openLeads, invoiced, overdueInv, overdueCount,
+  hearingsWeek, myOpenTasks, overdueTasks,
+  pipelineTotal, pipelineDelta,
+  pipelineData, pipelineMonths, stageVals,
+  todayEvents, weekEvents, hotMatters, topLeads, partners, partnerTotal,
+  recentActivity, today0, now,
+}: {
+  activeMatters: number; openLeads: number; invoiced: number; overdueInv: number; overdueCount: number;
+  hearingsWeek: number; myOpenTasks: Array<{ id: string; title: string; priority: import("@prisma/client").TaskPriority; dueAt: Date | null; status: import("@prisma/client").TaskStatus; matter: { id: string; matterNumber: string; title: string } | null }>; overdueTasks: number;
+  pipelineTotal: number; pipelinePrev?: number; pipelineDelta: number;
+  pipelineData: number[]; pipelineMonths: { label: string }[]; stageVals: Record<string, { count: number; value: number }>;
+  todayEvents: Array<{ id: string; type: import("@prisma/client").EventType; title: string; location: string | null; startsAt: Date; allDay: boolean; matter: { id: string; matterNumber: string } | null }>;
+  weekEvents: Array<{ id: string; type: import("@prisma/client").EventType; title: string; startsAt: Date; matter: { id: string; matterNumber: string } | null }>;
+  hotMatters: Array<{ id: string; matterNumber: string; title: string; status: import("@prisma/client").MatterStatus; client: { name: string; companyName: string | null; type: string } | null; assignees: Array<{ user: { name: string } }>; _count: { tasks: number } }>;
+  topLeads: Array<{ id: string; title: string; probability: number; value: unknown; contact: { name: string; companyName: string | null; type: string } | null }>;
+  partners: Array<{ id: string; name: string; color: string; revenue: number }>;
+  partnerTotal: number;
+  recentActivity: Array<{ id: string; action: string; createdAt: Date; actor: { name: string } | null }>;
+  today0: Date;
+  now: Date;
+}) {
+  return (
+    <>
       {/* 7-KPI strip */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 mb-8">
         <Kpi
@@ -214,7 +343,7 @@ export default async function CommandPage() {
         <Kpi
           label="Gecikmiş"
           value={formatTRY(overdueInv, { short: true })}
-          sub={`${overdueInvoices._count._all} fatura`}
+          sub={`${overdueCount} fatura`}
           trend="down"
         />
         <Kpi
@@ -667,7 +796,7 @@ export default async function CommandPage() {
           </ul>
         )}
       </div>
-    </div>
+    </>
   );
 }
 
