@@ -1,6 +1,6 @@
 import Link from "next/link";
 import {
-  Gavel, Calendar, Clock, CheckCircle2, Circle, FileText, Briefcase, Receipt,
+  Gavel, Calendar, Calendar as CalendarIcon, Clock, CheckCircle2, Circle, FileText, Briefcase, Receipt,
   TrendingUp, TrendingDown, Sparkles, ArrowRight, AlertCircle,
 } from "lucide-react";
 import { Kpi } from "@/components/ui/kpi";
@@ -189,21 +189,39 @@ export default async function CommandPage({
       <div className="mb-8 flex items-end justify-between gap-4 flex-wrap">
         <div>
           <div className="text-[11px] uppercase tracking-[0.14em] text-juris-red font-semibold mb-1.5">
-            {format(now, "EEEE · d MMMM yyyy", { locale: tr })}
+            {format(now, "EEEE · d MMMM yyyy", { locale: tr }).toUpperCase()}
           </div>
           <div className="display text-[34px] text-juris-navy leading-tight">
             {greet()}, <em style={{ fontStyle: "italic", color: "#BC2F2C" }}>{firstName}.</em>
           </div>
           <div className="text-sm text-juris-ink-3 mt-1.5">
-            {mode === "focus"
-              ? "Firmanın canlı durum panosu — bugünün kritik konuları"
-              : "Q2 2026 stratejik hedefleri — ilerleme ve riskler"}
+            {mode === "focus" ? (
+              focusSubtitle(hearingsWeek, myOpenTasks.length, topLeads.length)
+            ) : (
+              goalsSubtitle(
+                buildGoals({
+                  activeMatters,
+                  consultingActive: 0,
+                  openLeadsCount: openLeads,
+                  pipelineValue: pipelineTotal,
+                  overdueAmount: overdueInv,
+                  wonLeads: 0,
+                  invoicedYtd: invoiced,
+                  paidYtd: invoiced * 0.84,
+                  seoTraffic: 52600,
+                  contentPublished: 0,
+                }),
+              )
+            )}
           </div>
         </div>
-        <div className="flex gap-2 items-center">
+        <div className="flex gap-2 items-center flex-wrap">
           <CommandModeToggle mode={mode} />
+          <button type="button" className="btn btn-ghost btn-sm">
+            <CalendarIcon size={13} /> Takvim
+          </button>
           <Link href="/ops/new" className="btn btn-primary btn-sm">
-            <Briefcase size={13} /> Yeni Dosya
+            + Yeni
           </Link>
         </div>
       </div>
@@ -212,7 +230,7 @@ export default async function CommandPage({
         <GoalsBoard
           goals={buildGoals({
             activeMatters,
-            consultingActive: 0, // compute if needed
+            consultingActive: 0,
             openLeadsCount: openLeads,
             pipelineValue: pipelineTotal,
             overdueAmount: overdueInv,
@@ -223,7 +241,7 @@ export default async function CommandPage({
             contentPublished: 0,
           })}
           overdueClients={overdueInvoices._count._all > 0 ? [
-            // v0.8: fetch actual overdue invoices with client info
+            // v0.9: fetch actual overdue invoices with client info
           ] : []}
         />
       ) : (
@@ -255,6 +273,22 @@ export default async function CommandPage({
       )}
     </div>
   );
+}
+
+// Dinamik subtitle fonksiyonları — Stratejik Odak / Hedefler modlarına göre
+function focusSubtitle(hearings: number, myOpenTasks: number, hotLeads: number): string {
+  const parts: string[] = [];
+  if (hearings > 0) parts.push(`${hearings} duruşmanız`);
+  if (myOpenTasks > 0) parts.push(`${myOpenTasks} açık göreviniz`);
+  if (hotLeads > 0) parts.push(`${hotLeads} sıcak lead`);
+  if (parts.length === 0) return "Bugün için kritik konu yok. Rahat bir gün olsun.";
+  return parts.join(", ") + " bekliyor.";
+}
+
+function goalsSubtitle(goals: Goal[]): string {
+  const onTrack = goals.filter((g) => g.status === "track").length;
+  const atRisk = goals.filter((g) => g.status === "risk").length;
+  return `Q2 hedeflerinizin ${atRisk}'ü risk altında, ${onTrack}'i rayında.`;
 }
 
 // --------- Goal builder: computes 15 strategic goals from live DB counts ---------

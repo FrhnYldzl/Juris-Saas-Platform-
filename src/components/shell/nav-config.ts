@@ -22,7 +22,7 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     group: "Günün",
     items: [
-      { id: "command", label: "Komuta Merkezi", href: "/command", icon: LayoutDashboard },
+      { id: "command", label: "Stratejik Odak", href: "/command", icon: LayoutDashboard },
     ],
   },
   {
@@ -52,7 +52,7 @@ export const NAV_SECTIONS: NavSection[] = [
 ];
 
 export const PAGE_TITLES: Record<string, { title: string; breadcrumb?: string[] }> = {
-  "/command": { title: "Komuta Merkezi", breadcrumb: ["Günün"] },
+  "/command": { title: "Stratejik Odak", breadcrumb: ["juris"] },
   "/bd": { title: "İş Geliştirme", breadcrumb: ["Modüller"] },
   "/ops": { title: "Operasyonlar", breadcrumb: ["Modüller"] },
   "/marketing": { title: "Pazarlama", breadcrumb: ["Modüller"] },

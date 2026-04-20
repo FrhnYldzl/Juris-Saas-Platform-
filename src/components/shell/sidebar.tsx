@@ -14,15 +14,24 @@ import { cn } from "@/lib/utils";
 interface SidebarProps {
   user: { name: string; role: UserRole; title?: string | null };
   firmName: string;
+  badges?: Partial<Record<string, number | null>>;
 }
 
-export function Sidebar({ user, firmName: _firmName }: SidebarProps) {
+export function Sidebar({ user, firmName: _firmName, badges }: SidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
 
   const sections = NAV_SECTIONS.map((section) => ({
     ...section,
-    items: section.items.filter((item) => canAccessModule(user.role, item.id)),
+    items: section.items
+      .filter((item) => canAccessModule(user.role, item.id))
+      .map((item) => {
+        const count = badges?.[item.id];
+        return {
+          ...item,
+          tag: count && count > 0 ? String(count > 999 ? "999+" : count) : item.tag,
+        };
+      }),
   })).filter((section) => section.items.length > 0);
 
   return (

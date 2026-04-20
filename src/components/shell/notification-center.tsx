@@ -132,9 +132,11 @@ export function NotificationCenter() {
         <Bell size={16} />
         {unread != null && unread > 0 && (
           <span
-            className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-juris-red animate-pulse"
-            aria-hidden
-          />
+            className="absolute -top-1 -right-1 min-w-[16px] h-[16px] rounded-full bg-juris-red text-white text-[9px] font-bold flex items-center justify-center px-1 mono"
+            aria-label={`${unread} okunmamış`}
+          >
+            {unread > 99 ? "99+" : unread}
+          </span>
         )}
       </button>
 

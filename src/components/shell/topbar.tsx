@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { ChevronRight, LogOut } from "lucide-react";
+import { ChevronRight, Command, LogOut } from "lucide-react";
 import { signOut } from "next-auth/react";
 import type { UserRole } from "@prisma/client";
 import { Avatar } from "@/components/ui/avatar";
@@ -47,8 +47,15 @@ export function Topbar({ user }: TopbarProps) {
       </div>
 
       <div className="flex items-center gap-1.5">
-        <RoleSwitcher currentRole={user.role} />
+        <button
+          type="button"
+          aria-label="Komut paleti (⌘K)"
+          className="p-[7px] rounded-[5px] text-juris-ink-3 hover:bg-juris-navy-100 hover:text-juris-navy transition-colors"
+        >
+          <Command size={15} />
+        </button>
         <NotificationCenter />
+        <RoleSwitcher currentRole={user.role} />
         <div className="w-px h-6 bg-juris-line mx-1" />
         <div className="relative">
           <button

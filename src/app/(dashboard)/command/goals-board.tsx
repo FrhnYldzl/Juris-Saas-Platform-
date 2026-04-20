@@ -30,9 +30,9 @@ export interface OverdueClient {
 }
 
 const MODULE_META = {
-  fin:   { label: "Finans",        accent: "#1F7A4E" },
+  fin:   { label: "Finans",        accent: "#147D5C" },
   sales: { label: "Satış",         accent: "#BC2F2C" },
-  mkt:   { label: "Pazarlama",     accent: "#B4701C" },
+  mkt:   { label: "Pazarlama",     accent: "#B5791C" },
   ops:   { label: "Operasyonlar",  accent: "#0A2240" },
   bd:    { label: "İş Geliştirme", accent: "#2B5185" },
 } as const;

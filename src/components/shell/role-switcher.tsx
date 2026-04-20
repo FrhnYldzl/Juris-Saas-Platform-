@@ -5,13 +5,13 @@ import { ChevronDown, Eye, User, Briefcase, Crown, Shield, UserCog } from "lucid
 import type { UserRole } from "@prisma/client";
 import { cn } from "@/lib/utils";
 
-const ROLE_META: Record<UserRole, { label: string; icon: typeof Crown; hint: string }> = {
-  OWNER: { label: "Kurucu Ortak", icon: Crown, hint: "Tam yetki" },
-  PARTNER: { label: "Yönetici Ortak", icon: Crown, hint: "Neredeyse tam yetki" },
-  ASSOCIATE: { label: "Avukat", icon: Briefcase, hint: "Dosya + fatura" },
-  PARALEGAL: { label: "Paralegal", icon: UserCog, hint: "Okuma + belge" },
-  ADMIN_STAFF: { label: "İdari Personel", icon: Shield, hint: "Finans + ekip" },
-  CLIENT: { label: "Müvekkil", icon: User, hint: "Sadece kendi dosyaları" },
+const ROLE_META: Record<UserRole, { label: string; short: string; icon: typeof Crown; hint: string }> = {
+  OWNER: { label: "Kurucu Ortak", short: "Ortak", icon: Crown, hint: "Tam yetki" },
+  PARTNER: { label: "Yönetici Ortak", short: "Ortak", icon: Crown, hint: "Neredeyse tam yetki" },
+  ASSOCIATE: { label: "Avukat", short: "Avukat", icon: Briefcase, hint: "Dosya + fatura" },
+  PARALEGAL: { label: "Paralegal", short: "Stajyer", icon: UserCog, hint: "Okuma + belge" },
+  ADMIN_STAFF: { label: "İdari Personel", short: "İdari", icon: Shield, hint: "Finans + ekip" },
+  CLIENT: { label: "Müvekkil", short: "Müvekkil", icon: User, hint: "Sadece kendi dosyaları" },
 };
 
 /**
@@ -55,21 +55,31 @@ export function RoleSwitcher({
         type="button"
         onClick={() => setOpen((v) => !v)}
         className={cn(
-          "inline-flex items-center gap-1.5 h-8 px-2.5 rounded-md text-xs font-semibold transition-all",
-          previewRole
-            ? "bg-juris-red/8 text-juris-red border border-juris-red/30"
-            : "text-juris-ink-2 hover:bg-juris-navy-100 border border-transparent",
+          "inline-flex items-center gap-1.5 h-8 px-3 rounded-full text-xs font-semibold transition-all",
         )}
-        aria-label="Rol önizleme"
+        style={
+          previewRole
+            ? {
+                background: "rgba(188,47,44,0.08)",
+                color: "#BC2F2C",
+                border: "1px solid rgba(188,47,44,0.3)",
+              }
+            : {
+                background: "#BC2F2C",
+                color: "white",
+                border: "1px solid #BC2F2C",
+              }
+        }
+        aria-label="Rol"
       >
         {previewRole ? <Eye size={12} /> : <ActiveIcon size={12} />}
-        <span className="hidden sm:inline">{ROLE_META[activeRole].label}</span>
-        {previewRole && (
-          <span className="chip chip-red" style={{ height: 16, fontSize: 9, padding: "0 5px" }}>
-            Önizleme
-          </span>
-        )}
-        <ChevronDown size={11} className={cn("transition-transform", open && "rotate-180")} />
+        <span>
+          {previewRole ? ROLE_META[activeRole].short : ROLE_META[currentRole].short}
+        </span>
+        <ChevronDown
+          size={11}
+          className={cn("transition-transform opacity-80", open && "rotate-180")}
+        />
       </button>
 
       {open && (

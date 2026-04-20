@@ -25,11 +25,31 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const aiEnabled = can(user.role, "ai.use") && process.env.FEATURE_AI_ENABLED !== "false";
   const providers = aiEnabled ? listProviders() : [];
 
+  // Live nav badges — pipeline size, open matters, etc.
+  const firmId = session.user.firmId;
+  const [openLeads, activeMatters, openContacts, connectedIntegrations] = await Promise.all([
+    prisma.lead.count({
+      where: { firmId, stage: { notIn: ["WON", "LOST"] } },
+    }),
+    prisma.matter.count({ where: { firmId, status: "ACTIVE" } }),
+    prisma.contact.count({ where: { firmId, isClient: true } }),
+    prisma.integration.count({
+      where: { firmId, status: "CONNECTED" },
+    }),
+  ]);
+  const badges = {
+    bd: openLeads,
+    ops: activeMatters,
+    sales: openContacts,
+    integrations: connectedIntegrations,
+  };
+
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: "var(--bg)" }}>
       <Sidebar
         user={{ name: user.name, role: user.role, title: user.title }}
         firmName={user.firm.name}
+        badges={badges}
       />
       <div className="flex-1 flex flex-col min-w-0">
         <Topbar user={{ name: user.name, email: user.email, role: user.role }} />
