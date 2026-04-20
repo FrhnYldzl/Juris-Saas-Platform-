@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<title>Juris · Strateji</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600;1,700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; background: #000; overflow: hidden; font-family: 'Inter', system-ui, sans-serif; }
+  #root { position: fixed; inset: 0; }
+  .tweaks-panel {
+    position: fixed; right: 20px; bottom: 80px;
+    width: 300px; background: #0B1629; border: 1px solid rgba(232,236,244,0.12);
+    border-radius: 10px; padding: 18px; z-index: 1000;
+    color: #E8ECF4; font-family: 'Inter', system-ui, sans-serif;
+    font-size: 13px; box-shadow: 0 30px 60px rgba(0,0,0,0.7);
+  }
+  .tweaks-panel h3 { margin: 0 0 14px; font-size: 10px; letter-spacing: 0.36em; text-transform: uppercase; color: rgba(232,236,244,0.5); font-weight: 500; font-family: 'JetBrains Mono', monospace; }
+  .tweak-row { margin-bottom: 16px; }
+  .tweak-row label { display: block; margin-bottom: 8px; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(232,236,244,0.45); font-weight: 500; font-family: 'JetBrains Mono', monospace; }
+  .tweak-row select, .tweak-row button {
+    width: 100%; padding: 9px 11px; border-radius: 6px;
+    background: rgba(232,236,244,0.04); border: 1px solid rgba(232,236,244,0.1);
+    color: #E8ECF4; font-family: inherit; font-size: 13px; cursor: pointer;
+  }
+  .tweak-row select:hover, .tweak-row button:hover { background: rgba(232,236,244,0.08); }
+  .tweak-toggle { display: flex; gap: 6px; }
+  .tweak-toggle button { flex: 1; }
+  .tweak-toggle button.active { background: #E63946; border-color: #E63946; color: #fff; }
+</style>
+</head>
+<body data-screen-label="Juris Strateji">
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <script type="text/babel" src="animations.jsx"></script>
+  <script type="text/babel" src="juris-system.jsx"></script>
+  <script type="text/babel" src="juris-scenes.jsx"></script>
+
+  <script>
+    window.JURIS_TWEAKS = /*EDITMODE-BEGIN*/{
+      "slogan": "kesisim_noktasi",
+      "typography": "editorial",
+      "subLabels": true
+    }/*EDITMODE-END*/;
+  </script>
+
+  <script type="text/babel">
+    const SCENES = [
+      { id: 'opening',     start: 0,  end: 7,  label: 'CORE' },
+      { id: 'disciplines', start: 7,  end: 35, label: 'ORBIT' },
+      { id: 'world',       start: 35, end: 44, label: 'GLOBAL' },
+      { id: 'closing',     start: 44, end: 50, label: 'JURIS' },
+    ];
+    const DURATION = 50;
+
+    const SLOGAN_OPTIONS = {
+      kesisim_noktasi: {
+        main: (<>Hukukun <em>kesişim</em> noktası.</>),
+        sub: 'TICARET · TEKNOLOJI · FINANS · SEKTOR'
+      },
+      hukuk_merkezde: {
+        main: (<>Hukuk <em>merkezde</em>. Strateji etrafında.</>),
+        sub: 'JURIS AVUKATLIK ORTAKLIĞI'
+      },
+      gelecegi_savun: {
+        main: (<>Geleceği <em>savunuyoruz</em>.</>),
+        sub: 'KALIPLAŞMIŞ PRATİKLERİN DIŞINDA, JURIS FARKIYLA'
+      },
+      yeni_hukuk: {
+        main: (<>Yeni nesil <em>hukuk ortaklığı</em>.</>),
+        sub: 'TÜRKİYE\u2019DEN DÜNYAYA, HER DİSİPLİNDE'
+      },
+    };
+
+    function SceneLabeler() {
+      const t = useTime();
+      const sec = Math.floor(t);
+      React.useEffect(() => {
+        const cur = SCENES.find(s => sec >= s.start && sec < s.end) || SCENES[SCENES.length - 1];
+        document.body.setAttribute('data-screen-label',
+          `Juris Strateji · ${String(sec).padStart(2,'0')}s · ${cur.label}`);
+      }, [sec]);
+      return null;
+    }
+
+    function Chrome() {
+      const t = useTime();
+      const cur = SCENES.find(s => t >= s.start && t < s.end) || SCENES[SCENES.length - 1];
+      const idx = SCENES.indexOf(cur);
+      return <HudChrome sceneLabel={cur.label} sceneNum={idx + 1} total={SCENES.length} time={t} />;
+    }
+
+    function App() {
+      const [tweaks, setTweaks] = React.useState(window.JURIS_TWEAKS);
+      const [panelOpen, setPanelOpen] = React.useState(false);
+
+      React.useEffect(() => {
+        const onMsg = (e) => {
+          if (!e.data) return;
+          if (e.data.type === '__activate_edit_mode') setPanelOpen(true);
+          if (e.data.type === '__deactivate_edit_mode') setPanelOpen(false);
+        };
+        window.addEventListener('message', onMsg);
+        try { window.parent.postMessage({ type: '__edit_mode_available' }, '*'); } catch {}
+        return () => window.removeEventListener('message', onMsg);
+      }, []);
+
+      const updateTweak = (key, value) => {
+        const next = { ...tweaks, [key]: value };
+        setTweaks(next);
+        window.JURIS_TWEAKS = next;
+        try { window.parent.postMessage({ type: '__edit_mode_set_keys', edits: { [key]: value } }, '*'); } catch {}
+      };
+
+      const slogan = SLOGAN_OPTIONS[tweaks.slogan] || SLOGAN_OPTIONS.kesisim_noktasi;
+
+      return (
+        <>
+          <Stage width={1920} height={1080} duration={DURATION} background="#030711" persistKey="juris-strategy-v2">
+            <GridBackground opacity={0.7} />
+            <SceneLabeler />
+            <Chrome />
+
+            <SceneOpening     start={0}  end={7}  />
+            <SceneDisciplines start={7}  end={35} />
+            <SceneWorld       start={35} end={44} />
+            <SceneClosing     start={44} end={50} slogan={slogan} />
+          </Stage>
+
+          {panelOpen && (
+            <div className="tweaks-panel">
+              <h3>// TWEAKS</h3>
+              <div className="tweak-row">
+                <label>Slogan</label>
+                <select value={tweaks.slogan} onChange={(e) => updateTweak('slogan', e.target.value)}>
+                  <option value="kesisim_noktasi">Hukukun kesişim noktası.</option>
+                  <option value="hukuk_merkezde">Hukuk merkezde. Strateji etrafında.</option>
+                  <option value="gelecegi_savun">Geleceği savunuyoruz.</option>
+                  <option value="yeni_hukuk">Yeni nesil hukuk ortaklığı.</option>
+                </select>
+              </div>
+              <div className="tweak-row">
+                <label>Tipografi</label>
+                <div className="tweak-toggle">
+                  <button className={tweaks.typography === 'editorial' ? 'active' : ''}
+                          onClick={() => updateTweak('typography', 'editorial')}>Editorial</button>
+                  <button className={tweaks.typography === 'sade' ? 'active' : ''}
+                          onClick={() => updateTweak('typography', 'sade')}>Sade</button>
+                </div>
+              </div>
+              <div className="tweak-row">
+                <label>Alt Disiplinler</label>
+                <div className="tweak-toggle">
+                  <button className={tweaks.subLabels ? 'active' : ''}
+                          onClick={() => updateTweak('subLabels', true)}>Açık</button>
+                  <button className={!tweaks.subLabels ? 'active' : ''}
+                          onClick={() => updateTweak('subLabels', false)}>Kapalı</button>
+                </div>
+              </div>
+              <div style={{ fontSize: 10, fontFamily: 'JetBrains Mono, monospace',
+                            color: 'rgba(232,236,244,0.4)', marginTop: 10, lineHeight: 1.5,
+                            letterSpacing: '0.1em' }}>
+                SPACE · PLAY/PAUSE
+                <br />← → · SEEK &nbsp;&nbsp;·&nbsp;&nbsp; 0 · RESET
+              </div>
+            </div>
+          )}
+
+          <style>{`
+            ${tweaks.typography === 'sade' ? `
+              body [style*="Playfair Display"] {
+                font-family: 'Inter', system-ui, sans-serif !important;
+                font-style: normal !important;
+                letter-spacing: -0.035em !important;
+                font-weight: 600 !important;
+              }
+            ` : ''}
+          `}</style>
+        </>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

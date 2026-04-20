@@ -10,6 +10,7 @@ import type { LucideIcon } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { JurisLogo } from "@/components/ui/brand-mark";
 import { FIRM_INFO } from "@/lib/firm-info";
+import { StrategySection } from "@/components/landing/strategy-section";
 
 export const metadata = {
   title: "Juris Avukatlık Ortaklığı",
@@ -31,6 +32,7 @@ export default async function LandingPage() {
     <div className="min-h-screen bg-[#FBFAF7] text-[#0A2240]">
       <LandingNav />
       <Hero />
+      <StrategySection />
       <AudienceSplit />
       <PracticeAreas />
       <PlatformFeatures />
