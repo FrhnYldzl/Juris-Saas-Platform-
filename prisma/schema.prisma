@@ -28,20 +28,23 @@ model Firm {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  users        User[]
-  matters      Matter[]
-  leads        Lead[]
-  contacts     Contact[]
-  invoices     Invoice[]
-  documents    Document[]
-  auditLogs    AuditLog[]
-  integrations Integration[]
-  notes        Note[]
-  tasks        Task[]
-  events       CalendarEvent[]
-  messages     MatterMessage[]
-  subscription Subscription?
-  contentItems ContentItem[]
+  users            User[]
+  matters          Matter[]
+  leads            Lead[]
+  contacts         Contact[]
+  invoices         Invoice[]
+  documents        Document[]
+  auditLogs        AuditLog[]
+  integrations     Integration[]
+  notes            Note[]
+  tasks            Task[]
+  events           CalendarEvent[]
+  messages         MatterMessage[]
+  subscription     Subscription?
+  contentItems     ContentItem[]
+  resources        Resource[]
+  resourceContacts ResourceContact[]
+  resourceEvents   ResourceEvent[]
 
   @@map("firms")
 }
@@ -85,6 +88,7 @@ model User {
   uploadedDocs   Document[]
   events         CalendarEvent[]
   messages       MatterMessage[]
+  ownedResources Resource[]
 
   @@index([firmId])
   @@map("users")
@@ -601,6 +605,88 @@ model ContentItem {
   @@index([firmId, publishAt])
   @@index([firmId, status])
   @@map("content_items")
+}
+
+// ---------------- BD · Kaynak Network Yönetimi ----------------
+
+enum ResourceType {
+  COMPANY           // İlişkili Şirket
+  DIRECT_PARTNER    // Direkt Partner (YMM, avukat, danışman)
+  NETWORK           // Network / Dernek
+}
+
+enum ResourceHeat {
+  HOT   // Sıcak
+  WARM  // Ilık
+  COLD  // Soğuk
+}
+
+model Resource {
+  id            String       @id @default(cuid())
+  firmId        String       @map("firm_id")
+  type          ResourceType
+  name          String
+  description   String?
+  tags          String[]     @default([])
+  heat          ResourceHeat @default(WARM)
+  score         Int          @default(50)
+  leadCount     Int          @default(0)   @map("lead_count")
+  revenueTRY    Decimal?     @db.Decimal(14, 2) @map("revenue_try")
+  lastContactAt DateTime?    @map("last_contact_at")
+  ownerId       String?      @map("owner_id")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+
+  firm     Firm              @relation(fields: [firmId], references: [id], onDelete: Cascade)
+  owner    User?             @relation(fields: [ownerId], references: [id])
+  contacts ResourceContact[]
+  events   ResourceEvent[]
+
+  @@index([firmId, type])
+  @@index([firmId, heat])
+  @@map("resources")
+}
+
+model ResourceContact {
+  id            String       @id @default(cuid())
+  firmId        String       @map("firm_id")
+  resourceId    String       @map("resource_id")
+  name          String
+  role          String?
+  email         String?
+  phone         String?
+  linkedinUrl   String?      @map("linkedin_url")
+  heat          ResourceHeat @default(WARM)
+  lastContactAt DateTime?    @map("last_contact_at")
+  createdAt     DateTime     @default(now()) @map("created_at")
+
+  firm     Firm     @relation(fields: [firmId], references: [id], onDelete: Cascade)
+  resource Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+
+  @@index([firmId])
+  @@index([resourceId])
+  @@map("resource_contacts")
+}
+
+model ResourceEvent {
+  id             String    @id @default(cuid())
+  firmId         String    @map("firm_id")
+  resourceId     String?   @map("resource_id")
+  date           DateTime
+  eventType      String    @map("event_type")    // KONUŞMACI, SPONSOR, KATILIMCI, CO-HOST
+  title          String
+  organizer      String?
+  attendeeCount  Int?      @map("attendee_count")
+  leadCount      Int?      @map("lead_count")
+  leadUserName   String?   @map("lead_user_name")
+  calendarSynced Boolean   @default(false) @map("calendar_synced")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  firm     Firm      @relation(fields: [firmId], references: [id], onDelete: Cascade)
+  resource Resource? @relation(fields: [resourceId], references: [id])
+
+  @@index([firmId, date])
+  @@map("resource_events")
 }
 
 // ---------------- Audit Log ----------------

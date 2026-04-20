@@ -258,6 +258,214 @@ async function main() {
     },
   });
 
+  // ============================================================
+  // BD · Network Yönetimi — 11 resources (3 şirket + 4 partner + 4 network)
+  // ============================================================
+  const resources = await Promise.all([
+    // 3 İlişkili Şirket
+    prisma.resource.create({
+      data: {
+        firmId: firm.id, type: "COMPANY", name: "Fevup",
+        description: "Teknoloji yatırımları",
+        tags: ["Teknoloji", "Yatırım"],
+        heat: "HOT", score: 92, leadCount: 8,
+        revenueTRY: 2400000, ownerId: admin.id,
+        lastContactAt: new Date(Date.now() - 2 * 86400000),
+      },
+    }),
+    prisma.resource.create({
+      data: {
+        firmId: firm.id, type: "COMPANY", name: "Marqby",
+        description: "Marka & tasarım",
+        tags: ["Yaratıcı", "B2B"],
+        heat: "WARM", score: 74, leadCount: 3,
+        revenueTRY: 680000, ownerId: sarah.id,
+        lastContactAt: new Date(Date.now() - 9 * 86400000),
+      },
+    }),
+    prisma.resource.create({
+      data: {
+        firmId: firm.id, type: "COMPANY", name: "Inforexpect",
+        description: "Kurumsal danışmanlık",
+        tags: ["Danışmanlık"],
+        heat: "HOT", score: 81, leadCount: 5,
+        revenueTRY: 1100000, ownerId: admin.id,
+        lastContactAt: new Date(Date.now() - 5 * 86400000),
+      },
+    }),
+    // 4 Direkt Partner
+    prisma.resource.create({
+      data: {
+        firmId: firm.id, type: "DIRECT_PARTNER", name: "Çelikel YMM",
+        description: "Yeminli mali müşavir",
+        tags: ["Mali Müşavir"],
+        heat: "HOT", score: 88, leadCount: 6,
+        revenueTRY: 920000, ownerId: admin.id,
+        lastContactAt: new Date(Date.now() - 3 * 86400000),
+      },
+    }),
+    prisma.resource.create({
+      data: {
+        firmId: firm.id, type: "DIRECT_PARTNER", name: "PwC Türkiye",
+        description: "Bağımsız denetim",
+        tags: ["Denetim", "Global"],
+        heat: "WARM", score: 65, leadCount: 2,
+        revenueTRY: 450000, ownerId: admin.id,
+        lastContactAt: new Date(Date.now() - 18 * 86400000),
+      },
+    }),
+    prisma.resource.create({
+      data: {
+        firmId: firm.id, type: "DIRECT_PARTNER", name: "Aksu Hukuk Bürosu",
+        description: "İzmir · gayrimenkul uzmanlık",
+        tags: ["Hukuk", "İzmir"],
+        heat: "WARM", score: 72, leadCount: 4,
+        revenueTRY: 380000, ownerId: sarah.id,
+        lastContactAt: new Date(Date.now() - 11 * 86400000),
+      },
+    }),
+    prisma.resource.create({
+      data: {
+        firmId: firm.id, type: "DIRECT_PARTNER", name: "Sigma Eksper",
+        description: "Sigorta eksperliği",
+        tags: ["Sigorta"],
+        heat: "COLD", score: 58, leadCount: 1,
+        revenueTRY: 120000, ownerId: admin.id,
+        lastContactAt: new Date(Date.now() - 28 * 86400000),
+      },
+    }),
+    // 4 Network / Dernek
+    prisma.resource.create({
+      data: {
+        firmId: firm.id, type: "NETWORK", name: "ETİD",
+        description: "Elektronik Ticaret İşletmecileri Derneği",
+        tags: ["E-Ticaret", "Üyelik"],
+        heat: "HOT", score: 84, leadCount: 7,
+        revenueTRY: 1400000, ownerId: admin.id,
+        lastContactAt: new Date(Date.now() - 4 * 86400000),
+      },
+    }),
+    prisma.resource.create({
+      data: {
+        firmId: firm.id, type: "NETWORK", name: "TİM",
+        description: "Türkiye İhracatçılar Meclisi",
+        tags: ["İhracat", "Üyelik"],
+        heat: "WARM", score: 70, leadCount: 3,
+        revenueTRY: 720000, ownerId: sarah.id,
+        lastContactAt: new Date(Date.now() - 12 * 86400000),
+      },
+    }),
+    prisma.resource.create({
+      data: {
+        firmId: firm.id, type: "NETWORK", name: "OAİB",
+        description: "Orta Anadolu İhracatçı Birlikleri",
+        tags: ["İhracat"],
+        heat: "COLD", score: 48, leadCount: 1,
+        revenueTRY: 180000, ownerId: admin.id,
+        lastContactAt: new Date(Date.now() - 42 * 86400000),
+      },
+    }),
+    prisma.resource.create({
+      data: {
+        firmId: firm.id, type: "NETWORK", name: "Sigorta Hakem Derneği",
+        description: "Üye avukat",
+        tags: ["Sigorta", "Hakem"],
+        heat: "WARM", score: 62, leadCount: 4,
+        revenueTRY: 320000, ownerId: admin.id,
+        lastContactAt: new Date(Date.now() - 7 * 86400000),
+      },
+    }),
+  ]);
+
+  // 7 resource contacts (kilit temaslar)
+  const contactsMap: Record<string, string> = {};
+  for (const r of resources) contactsMap[r.name] = r.id;
+
+  await prisma.resourceContact.createMany({
+    data: [
+      {
+        firmId: firm.id, resourceId: contactsMap["Fevup"],
+        name: "Burak Özgür", role: "Partner",
+        email: "burak@fevup.com", linkedinUrl: "https://linkedin.com/in/burakozgur",
+        heat: "HOT", lastContactAt: new Date(Date.now() - 2 * 86400000),
+      },
+      {
+        firmId: firm.id, resourceId: contactsMap["Marqby"],
+        name: "Seda Akın", role: "GM",
+        email: "seda@marqby.com", linkedinUrl: "https://linkedin.com/in/sedaakin",
+        heat: "WARM", lastContactAt: new Date(Date.now() - 9 * 86400000),
+      },
+      {
+        firmId: firm.id, resourceId: contactsMap["Çelikel YMM"],
+        name: "Ayşegül Dinç", role: "YMM",
+        email: "aysegul@celikel.com.tr",
+        heat: "HOT", lastContactAt: new Date(Date.now() - 3 * 86400000),
+      },
+      {
+        firmId: firm.id, resourceId: contactsMap["PwC Türkiye"],
+        name: "Hakan Yurt", role: "Direktör",
+        email: "hakan.yurt@pwc.com", linkedinUrl: "https://linkedin.com/in/hakanyurt",
+        heat: "WARM", lastContactAt: new Date(Date.now() - 18 * 86400000),
+      },
+      {
+        firmId: firm.id, resourceId: contactsMap["ETİD"],
+        name: "İsmail Tekin", role: "Başkan Yrd.",
+        email: "ismail@etid.org", linkedinUrl: "https://linkedin.com/in/ismailtekin",
+        heat: "HOT", lastContactAt: new Date(Date.now() - 4 * 86400000),
+      },
+      {
+        firmId: firm.id, resourceId: contactsMap["TİM"],
+        name: "Dr. Nihal Arslan", role: "Yön. Kur. Üye",
+        email: "nihal.arslan@tim.org.tr",
+        heat: "WARM", lastContactAt: new Date(Date.now() - 12 * 86400000),
+      },
+      {
+        firmId: firm.id, resourceId: contactsMap["Aksu Hukuk Bürosu"],
+        name: "Av. Mustafa Aksu", role: "Kurucu",
+        email: "aksu@aksuhukuk.com", linkedinUrl: "https://linkedin.com/in/mustafaaksu",
+        heat: "WARM", lastContactAt: new Date(Date.now() - 11 * 86400000),
+      },
+    ],
+  });
+
+  // 4 upcoming events
+  const may2026 = (d: number, h = 10) => new Date(2026, 4, d, h, 0);
+  const apr2026 = (d: number, h = 10) => new Date(2026, 3, d, h, 0);
+  await prisma.resourceEvent.createMany({
+    data: [
+      {
+        firmId: firm.id, resourceId: contactsMap["ETİD"],
+        date: may2026(8, 14),
+        eventType: "KONUŞMACI", title: "ETİD E-Ticaret Zirvesi", organizer: "ETİD",
+        attendeeCount: 180, leadCount: 3, leadUserName: "Mehmet",
+        calendarSynced: true,
+      },
+      {
+        firmId: firm.id, resourceId: contactsMap["Fevup"],
+        date: may2026(15, 18),
+        eventType: "SPONSOR + PANELİST", title: "Fevup portföy günü", organizer: "Fevup",
+        attendeeCount: 60, leadCount: 2, leadUserName: "Elif",
+        calendarSynced: true,
+      },
+      {
+        firmId: firm.id, resourceId: contactsMap["TİM"],
+        date: apr2026(22, 9),
+        eventType: "KATILIMCI", title: "TİM Ege Bölge Toplantısı", organizer: "TİM",
+        attendeeCount: 120, leadCount: 1, leadUserName: "Mehmet",
+        calendarSynced: true,
+      },
+      {
+        firmId: firm.id, resourceId: contactsMap["PwC Türkiye"],
+        date: apr2026(18, 15),
+        eventType: "CO-HOST", title: "PwC Vergi Güncesi", organizer: "PwC Türkiye",
+        attendeeCount: 45, leadCount: 4, leadUserName: "Cem",
+        calendarSynced: true,
+      },
+    ],
+  });
+
+  console.log("✓ BD network data (11 resources, 7 contacts, 4 events)");
+
   console.log("✓ Demo data seeded");
   console.log("");
   console.log("Giriş bilgileri:");
