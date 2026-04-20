@@ -12,6 +12,7 @@ import { SectionHead } from "@/components/ui/section-head";
 import { invoiceStatusChip } from "@/lib/labels";
 import { formatTRY, formatDateTR } from "@/lib/utils";
 import { FinanceTabs } from "./finance-tabs";
+import { SourcesButton } from "@/components/shell/sources-panel";
 
 export const metadata = { title: "Finans" };
 
@@ -152,7 +153,8 @@ export default async function FinancePage({
             </span>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <SourcesButton moduleKey="finance" />
           <button className="btn btn-ghost">
             <Download size={14} /> Excel&apos;e aktar
           </button>

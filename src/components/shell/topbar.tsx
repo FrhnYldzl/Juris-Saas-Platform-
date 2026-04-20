@@ -3,13 +3,15 @@
 import { usePathname, useRouter } from "next/navigation";
 import { ChevronRight, LogOut } from "lucide-react";
 import { signOut } from "next-auth/react";
+import type { UserRole } from "@prisma/client";
 import { Avatar } from "@/components/ui/avatar";
 import { PAGE_TITLES } from "./nav-config";
 import { NotificationCenter } from "./notification-center";
+import { RoleSwitcher } from "./role-switcher";
 import { useState } from "react";
 
 interface TopbarProps {
-  user: { name: string; email: string };
+  user: { name: string; email: string; role: UserRole };
 }
 
 export function Topbar({ user }: TopbarProps) {
@@ -45,6 +47,7 @@ export function Topbar({ user }: TopbarProps) {
       </div>
 
       <div className="flex items-center gap-1.5">
+        <RoleSwitcher currentRole={user.role} />
         <NotificationCenter />
         <div className="w-px h-6 bg-juris-line mx-1" />
         <div className="relative">

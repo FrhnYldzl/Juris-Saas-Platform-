@@ -32,7 +32,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         firmName={user.firm.name}
       />
       <div className="flex-1 flex flex-col min-w-0">
-        <Topbar user={{ name: user.name, email: user.email }} />
+        <Topbar user={{ name: user.name, email: user.email, role: user.role }} />
         <main className="flex-1 overflow-y-auto">{children}</main>
       </div>
       {aiEnabled && <AIChatWidget providers={providers} />}

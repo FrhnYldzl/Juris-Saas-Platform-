@@ -265,3 +265,9 @@ body[data-serif="off"] h5 {
   letter-spacing: -0.02em !important;
 }
 
+/* Skeleton shimmer (used by DashboardSkeleton) */
+@keyframes juris-shimmer {
+  0%   { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+

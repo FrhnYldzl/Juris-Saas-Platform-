@@ -14,6 +14,7 @@ import { formatDateTR, formatTRY } from "@/lib/utils";
 import { matterTypeLabel, matterStatusChip } from "@/lib/labels";
 import { cn } from "@/lib/utils";
 import { OpsTabs } from "./ops-tabs";
+import { SourcesButton } from "@/components/shell/sources-panel";
 
 export const metadata = { title: "Operasyonlar · Dosyalar" };
 
@@ -117,9 +118,12 @@ export default async function OpsPage({
       {/* Tabs + actions */}
       <div className="flex items-center justify-between gap-3 mb-5">
         <OpsTabs active={tab} />
-        <Link href="/ops/new" className="btn btn-primary btn-sm">
-          <Plus size={13} /> Yeni Dosya
-        </Link>
+        <div className="flex gap-2">
+          <SourcesButton moduleKey="matters" />
+          <Link href="/ops/new" className="btn btn-primary btn-sm">
+            <Plus size={13} /> Yeni Dosya
+          </Link>
+        </div>
       </div>
 
       {tab === "ozet" ? (

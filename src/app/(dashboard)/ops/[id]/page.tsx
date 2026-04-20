@@ -13,6 +13,7 @@ import { EventsPanel } from "./events-panel";
 import { DocumentsPanel } from "./documents-panel";
 import { AISummaryButton } from "./ai-summary-button";
 import { MessagesPanel } from "@/components/messaging/messages-panel";
+import { MatterTimeline } from "./matter-timeline";
 import { auth } from "@/lib/auth";
 import { can } from "@/lib/rbac";
 
@@ -240,6 +241,8 @@ export default async function MatterDetailPage({
               userName: userNameMap.get(t.userId) ?? "—",
             }))}
           />
+
+          <MatterTimeline matterId={matter.id} />
         </div>
 
         {/* Side (1/3) */}

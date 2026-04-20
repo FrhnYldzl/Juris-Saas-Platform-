@@ -9,6 +9,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { leadStageLabel } from "@/lib/labels";
 import { formatTRY, formatDateTR } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import { SourcesButton } from "@/components/shell/sources-panel";
 
 export const metadata = { title: "İş Geliştirme · Pipeline" };
 
@@ -109,6 +110,7 @@ export default async function BdPage({
           <button className="btn btn-ghost btn-sm hidden md:inline-flex">
             <Filter size={12} /> Filtre
           </button>
+          <SourcesButton moduleKey="bd" />
           <Link href="/bd/new" className="btn btn-primary btn-sm">
             <Plus size={13} /> Yeni Fırsat
           </Link>

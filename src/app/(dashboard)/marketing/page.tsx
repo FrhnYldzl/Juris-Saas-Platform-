@@ -11,6 +11,7 @@ import { formatDateTR } from "@/lib/utils";
 import type { ContentStatus, ContentChannel } from "@prisma/client";
 import { startOfMonth, endOfMonth, subMonths, format } from "date-fns";
 import { tr } from "date-fns/locale";
+import { SourcesButton } from "@/components/shell/sources-panel";
 
 export const metadata = { title: "Pazarlama" };
 
@@ -114,7 +115,8 @@ export default async function MarketingPage() {
             İçerik takvimi, kanal performansı ve AI-destekli üretim
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <SourcesButton moduleKey="marketing" />
           <button className="btn btn-ghost">
             <Sparkles size={14} /> AI ile Fikir
           </button>

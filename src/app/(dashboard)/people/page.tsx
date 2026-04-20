@@ -9,6 +9,7 @@ import { roleLabelTR } from "@/lib/labels";
 import { formatDateTR } from "@/lib/utils";
 import { ProgressThin } from "@/components/ui/mini-chart";
 import { cn } from "@/lib/utils";
+import { SourcesButton } from "@/components/shell/sources-panel";
 
 export const metadata = { title: "Ekip" };
 
@@ -55,11 +56,14 @@ export default async function PeoplePage() {
         title="Ekip"
         subtitle="Avukatlar, stajyerler, idari kadro · iş yükü görünümü"
         actions={
-          canInvite ? (
-            <Link href="/people/invite" className="btn btn-primary">
-              <Plus size={14} /> Üye Davet Et
-            </Link>
-          ) : null
+          <div className="flex gap-2">
+            <SourcesButton moduleKey="people" />
+            {canInvite && (
+              <Link href="/people/invite" className="btn btn-primary">
+                <Plus size={14} /> Üye Davet Et
+              </Link>
+            )}
+          </div>
         }
       />
 
