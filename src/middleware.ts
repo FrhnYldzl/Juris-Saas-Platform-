@@ -7,7 +7,12 @@ const PUBLIC_PATHS = [
   "/kvkk", "/gizlilik", "/iletisim",
   "/api/auth", "/api/health",
 ];
-const PUBLIC_ASSETS = ["/_next", "/favicon.ico", "/brand", "/fonts", "/robots.txt", "/sitemap.xml"];
+const PUBLIC_ASSETS = [
+  "/_next", "/favicon.ico",
+  "/brand", "/fonts",
+  "/animation",     // Strategy animation iframe + its .jsx/.png deps
+  "/robots.txt", "/sitemap.xml",
+];
 
 export default async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
