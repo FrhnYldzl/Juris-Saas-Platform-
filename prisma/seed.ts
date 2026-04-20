@@ -652,6 +652,113 @@ async function main() {
 
   console.log("✓ BD network data (11 resources, 7 contacts, 4 events)");
 
+  // ============================================================
+  // PAZARLAMA · 6 içerik (tasarım doc exact)
+  // ============================================================
+  const today = new Date();
+  const daysAgo = (d: number) => new Date(today.getTime() - d * 86400000);
+
+  await prisma.contentItem.createMany({
+    data: [
+      {
+        firmId: firm.id,
+        title: "KVKK 2026: sınır ötesi veri aktarımında yeni dönem",
+        summary:
+          "2026 KVKK değişikliklerinin şirketlere etkisi, sınır ötesi veri aktarımı ve otomatik karar alma yükümlülükleri — 8 dakikada uygulanabilir rehber.",
+        body: "Bu içerik yayında. Editörden içeriği düzenleyebilir, AI ile türevlerini üretebilir veya metrikleri canlı takip edebilirsiniz.",
+        channel: "BLOG",
+        contentType: "SEO Makale",
+        status: "PUBLISHED",
+        author: "Elif K.",
+        aiAssisted: true,
+        publishedAt: daysAgo(2),
+        readMinutes: 8,
+        viewCount: 4820,
+        leadCount: 3,
+        engagementPct: 74,
+        seoRank: 4,
+        backlinks: 12,
+        metaTitle: "KVKK 2026 Güncellemeleri — Sınır Ötesi Veri Aktarımı Rehberi",
+        metaDescription:
+          "2026 KVKK değişikliklerinin şirketlere etkisi, sınır ötesi veri aktarımı ve otomatik karar alma yükümlülükleri — 8 dakikada uygulanabilir rehber.",
+        keywords: ["KVKK 2026", "veri koruma", "sınır ötesi veri", "GDPR Türkiye", "kişisel veri"],
+        tags: ["LegalArticle", "Attorney", "FAQPage"],
+      },
+      {
+        firmId: firm.id,
+        title: "E-ticaret rekabet davaları: 2026'da beklenenler",
+        summary: "2026 yılında e-ticaret sektöründe beklenen rekabet hukuku davaları ve hukuki stratejiler.",
+        channel: "BLOG",
+        contentType: "Vaka Notu",
+        status: "REVIEW",
+        author: "Mehmet Y.",
+        aiAssisted: true,
+        draftVersion: 3,
+        tags: [],
+      },
+      {
+        firmId: firm.id,
+        title: "Aile hukukunda arabuluculuk rehberi",
+        summary: "Arabuluculuğa ilişkin güncel mevzuat ve uygulama örnekleri.",
+        channel: "LINKEDIN",
+        contentType: "LinkedIn",
+        status: "PUBLISHED",
+        author: "Zeynep D.",
+        aiAssisted: true,
+        publishedAt: daysAgo(5),
+        viewCount: 1800,
+        leadCount: 2,
+        engagementPct: 58,
+        url: "https://linkedin.com/pulse/juris-aile-hukuku-arabuluculuk",
+        tags: [],
+      },
+      {
+        firmId: firm.id,
+        title: "Patent savunmasında bilirkişi stratejisi — whitepaper",
+        summary: "Patent ihlali davalarında bilirkişi raporlarının etkin kullanımı için stratejik rehber.",
+        channel: "OTHER",
+        contentType: "Whitepaper",
+        status: "PUBLISHED",
+        author: "Cem A.",
+        aiAssisted: true,
+        publishedAt: daysAgo(14),
+        viewCount: 700,
+        leadCount: 5,
+        engagementPct: 82,
+        tags: [],
+      },
+      {
+        firmId: firm.id,
+        title: "Q1 2026 hukuki gündem — e-bülten #42",
+        summary: "Bu ayın en kritik mevzuat güncellemeleri ve yargı kararları.",
+        channel: "NEWSLETTER",
+        contentType: "Newsletter",
+        status: "PUBLISHED",
+        author: "Elif K.",
+        aiAssisted: false,
+        publishedAt: daysAgo(7),
+        viewCount: 3100,
+        leadCount: 4,
+        engagementPct: 52,
+        tags: [],
+      },
+      {
+        firmId: firm.id,
+        title: "Rekabet Kurulu'nun son e-ticaret kararları",
+        summary: "Son 3 ayın en önemli Rekabet Kurulu kararlarından özet + pratik çıkarımlar.",
+        channel: "OTHER",
+        contentType: "Basın Bülteni",
+        status: "DRAFT",
+        author: "AI ilk draft",
+        aiAssisted: true,
+        draftVersion: 1,
+        tags: [],
+      },
+    ],
+  });
+
+  console.log("✓ Marketing content data (6 items)");
+
   console.log("✓ Demo data seeded");
   console.log("");
   console.log("Giriş bilgileri:");

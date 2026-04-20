@@ -614,6 +614,20 @@ model ContentItem {
   publishedAt DateTime?      @map("published_at")
   url         String?
   tags        String[]       @default([])
+  // --- Metrics / SEO / AI ---
+  body            String?  @db.Text
+  contentType     String?  @map("content_type")       // SEO Makale, Vaka Notu, Whitepaper, Newsletter, Basın Bülteni, LinkedIn
+  readMinutes     Int?     @map("read_minutes")       // 8dk okuma
+  viewCount       Int      @default(0) @map("view_count")
+  leadCount       Int      @default(0) @map("lead_count")
+  engagementPct   Int?     @map("engagement_pct")     // 74
+  seoRank         Int?     @map("seo_rank")           // #4
+  backlinks       Int      @default(0)
+  metaTitle       String?  @map("meta_title")
+  metaDescription String?  @db.Text @map("meta_description")
+  keywords        String[] @default([])
+  aiAssisted      Boolean  @default(false) @map("ai_assisted")
+  draftVersion    Int?     @map("draft_version")      // Taslak v3
   createdAt   DateTime       @default(now()) @map("created_at")
   updatedAt   DateTime       @updatedAt @map("updated_at")
 
