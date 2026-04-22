@@ -7,19 +7,21 @@ import {
 } from "lucide-react";
 
 const NAV = [
-  { key: "ozet",  label: "Yönetici Özeti",     icon: LayoutGrid },
+  { key: "ozet",  label: "Yönetici Özeti",      icon: LayoutGrid },
   { key: "hukuk", label: "Hukuk Operasyonları", icon: Briefcase },
   { key: "idari", label: "İdari Konular",       icon: Settings2 },
 ] as const;
 
 export function PortalLeftNav({
-  clientLabel, role, advisorName, advisorTitle, advisorInitials,
+  clientLabel, role, advisorName, advisorTitle, advisorInitials, advisorPhone, advisorEmail,
 }: {
   clientLabel: string;
   role: string;
   advisorName: string;
   advisorTitle: string;
   advisorInitials: string;
+  advisorPhone: string | null;
+  advisorEmail: string | null;
 }) {
   const sp = useSearchParams();
   const active = sp.get("view") ?? "ozet";
@@ -83,13 +85,13 @@ export function PortalLeftNav({
           Hızlı Eylem
         </div>
         <div className="flex flex-col gap-2">
-          <button
-            type="button"
+          <a
+            href={advisorEmail ? `mailto:${advisorEmail}` : "#"}
             className="w-full inline-flex items-center gap-2 px-3.5 py-2.5 rounded-md text-[12.5px] font-semibold text-white transition-colors"
             style={{ background: "#BC2F2C" }}
           >
             <Mail size={13} /> Avukatıma yaz
-          </button>
+          </a>
           <button
             type="button"
             className="w-full inline-flex items-center gap-2 px-3.5 py-2.5 rounded-md text-[12.5px] font-semibold text-juris-ink-2 transition-colors hover:bg-juris-paper-2"
@@ -124,23 +126,43 @@ export function PortalLeftNav({
           </div>
         </div>
         <div className="grid grid-cols-4 gap-1.5">
-          <IconButton icon={<Phone size={12} />}        label="Ara" />
-          <IconButton icon={<Mail size={12} />}         label="E-posta" />
-          <IconButton icon={<MessageSquare size={12} />} label="Mesaj" />
-          <IconButton icon={<Printer size={12} />}      label="Yazdır" />
+          <IconLink href={advisorPhone ? `tel:${advisorPhone.replace(/\s/g, "")}` : undefined} icon={<Phone size={12} />}        label="Ara" />
+          <IconLink href={advisorEmail ? `mailto:${advisorEmail}` : undefined}                   icon={<Mail size={12} />}         label="E-posta" />
+          <IconLink href="/portal"                                                                 icon={<MessageSquare size={12} />} label="Mesaj" />
+          <IconLink href={undefined}                                                                icon={<Printer size={12} />}      label="Yazdır" />
         </div>
       </div>
     </aside>
   );
 }
 
-function IconButton({ icon, label }: { icon: React.ReactNode; label: string }) {
+function IconLink({
+  icon, label, href,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  href?: string;
+}) {
+  const cls = "h-8 rounded-md inline-flex items-center justify-center text-juris-ink-3 hover:text-juris-navy hover:bg-juris-paper-2 transition-colors";
+  if (href) {
+    return (
+      <a
+        href={href}
+        className={cls}
+        style={{ border: "1px solid #E5E9F0" }}
+        title={label}
+      >
+        {icon}
+      </a>
+    );
+  }
   return (
     <button
       type="button"
-      className="h-8 rounded-md inline-flex items-center justify-center text-juris-ink-3 hover:text-juris-navy hover:bg-juris-paper-2 transition-colors"
-      style={{ border: "1px solid #E5E9F0" }}
+      className={cls}
+      style={{ border: "1px solid #E5E9F0", opacity: 0.6 }}
       title={label}
+      disabled
     >
       {icon}
     </button>

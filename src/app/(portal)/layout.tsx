@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { loadPortalContext, initialsOf, firstNameOf } from "@/lib/portal-context";
 import { PortalLeftNav } from "./portal-left-nav";
 import { PortalRightPanel } from "./portal-right-panel";
 import { PortalTopbar } from "./portal-topbar";
@@ -9,34 +9,42 @@ import { TweaksPanel } from "@/components/shell/tweaks-panel";
 export default async function PortalLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
   if (!session?.user) redirect("/login");
+
+  // Hard separation: only CLIENT role sees the portal. Everyone else → dashboard.
   if (session.user.role !== "CLIENT") redirect("/command");
 
-  // Resolve the client's Contact record so we can display firm + authority role
-  const contact = await prisma.contact.findFirst({
-    where: {
-      firmId: session.user.firmId,
-      email: session.user.email ?? undefined,
-      isClient: true,
-    },
-    select: {
-      name: true,
-      companyName: true,
-      type: true,
-      phone: true,
-      email: true,
-    },
-  });
+  const ctx = await loadPortalContext(session.user.firmId, session.user.email ?? "");
 
   const clientLabel =
-    contact?.type === "COMPANY"
-      ? contact.companyName ?? contact.name
-      : contact?.name ?? session.user.name;
+    ctx?.contact.type === "COMPANY"
+      ? ctx.contact.companyName ?? ctx.contact.name
+      : ctx?.contact.name ?? session.user.name ?? "Müvekkil";
 
-  const firstName = (session.user.name ?? "").split(" ")[0] || "Müvekkil";
+  const userFirstName = firstNameOf(session.user.name ?? "");
+  const userInitials = initialsOf(session.user.name ?? "");
+  // Clients that authenticate with a company email are typically the authorised
+  // contact person for the company. The UI calls this "Yetkili / CEO" in the design.
+  const clientPosition = ctx?.contact.type === "COMPANY" ? "Yetkili / CEO" : "Müvekkil";
+
+  const advisor = ctx?.advisor;
+  const advisorName     = advisor?.name     ?? "Avukat atanmadı";
+  const advisorTitle    = advisor?.title    ?? "Sorumlu avukat";
+  const advisorInitials = advisor?.name ? initialsOf(advisor.name) : "—";
+  const advisorEmail    = advisor?.email    ?? null;
+  const advisorPhone    = advisor?.phone    ?? null;
+
+  const managingPartner = ctx?.managingPartner;
+  const unread = ctx?.unreadMessages ?? 0;
 
   return (
     <div className="min-h-screen" style={{ background: "#F4F6FA" }}>
-      <PortalTopbar userName={firstName} userEmail={session.user.email} />
+      <PortalTopbar
+        userName={session.user.name ?? "Müvekkil"}
+        userEmail={session.user.email}
+        userInitials={userInitials}
+        clientPosition={clientPosition}
+        unreadCount={unread}
+      />
 
       <div
         className="mx-auto grid gap-0"
@@ -47,16 +55,24 @@ export default async function PortalLayout({ children }: { children: React.React
         }}
       >
         <PortalLeftNav
-          clientLabel={clientLabel ?? "Müvekkil"}
-          role="Yetkili / CEO"
-          advisorName="Av. Zeynep Arslan"
-          advisorTitle="Kıdemli Ortak"
-          advisorInitials="AZ"
+          clientLabel={clientLabel}
+          role={clientPosition}
+          advisorName={advisorName}
+          advisorTitle={advisorTitle}
+          advisorInitials={advisorInitials}
+          advisorPhone={advisorPhone}
+          advisorEmail={advisorEmail}
         />
 
         <main className="px-8 py-7 overflow-x-hidden">{children}</main>
 
-        <PortalRightPanel />
+        <PortalRightPanel
+          firstName={userFirstName || "Müvekkil"}
+          advisorName={advisorName}
+          advisorInitials={advisorInitials}
+          managingPartnerName={managingPartner?.name ?? null}
+          unreadCount={unread}
+        />
       </div>
 
       <TweaksPanel />

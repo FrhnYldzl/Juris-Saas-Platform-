@@ -7,7 +7,15 @@ import {
 
 type TabKey = "ai" | "mesajlar" | "aktivite";
 
-export function PortalRightPanel() {
+export function PortalRightPanel({
+  firstName, advisorName, advisorInitials, managingPartnerName, unreadCount,
+}: {
+  firstName: string;
+  advisorName: string;
+  advisorInitials: string;
+  managingPartnerName: string | null;
+  unreadCount: number;
+}) {
   const [tab, setTab] = useState<TabKey>("ai");
 
   return (
@@ -21,14 +29,14 @@ export function PortalRightPanel() {
       {/* Tab bar */}
       <div className="flex" style={{ borderBottom: "1px solid #EEF1F5" }}>
         <TabBtn label="AI Asistan" icon={<Sparkles size={12} />} active={tab === "ai"}       onClick={() => setTab("ai")} />
-        <TabBtn label="Mesajlar"   icon={<MessageSquare size={12} />} active={tab === "mesajlar"} badge={3} onClick={() => setTab("mesajlar")} />
+        <TabBtn label="Mesajlar"   icon={<MessageSquare size={12} />} active={tab === "mesajlar"} badge={unreadCount} onClick={() => setTab("mesajlar")} />
         <TabBtn label="Aktivite"   icon={<Activity size={12} />} active={tab === "aktivite"} onClick={() => setTab("aktivite")} />
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        {tab === "ai"       && <AIAssistantPane />}
-        {tab === "mesajlar" && <MessagesPane />}
-        {tab === "aktivite" && <ActivityPane />}
+        {tab === "ai"       && <AIAssistantPane firstName={firstName} />}
+        {tab === "mesajlar" && <MessagesPane advisorName={advisorName} advisorInitials={advisorInitials} managingPartnerName={managingPartnerName} />}
+        {tab === "aktivite" && <ActivityPane firstName={firstName} advisorName={advisorName} />}
       </div>
     </aside>
   );
@@ -54,12 +62,12 @@ function TabBtn({
     >
       {icon}
       {label}
-      {badge !== undefined && (
+      {badge !== undefined && badge > 0 && (
         <span
           className="inline-flex items-center justify-center min-w-[16px] h-4 rounded-full text-[9px] font-bold text-white px-1"
           style={{ background: "#BC2F2C" }}
         >
-          {badge}
+          {badge > 99 ? "99+" : badge}
         </span>
       )}
       {active && (
@@ -74,9 +82,9 @@ function TabBtn({
 
 // ─────────────── AI Assistant ───────────────
 
-function AIAssistantPane() {
+function AIAssistantPane({ firstName }: { firstName: string }) {
   const suggestions = [
-    "2026/412 davasında sonraki duruşmada ne yapılacak?",
+    "Yaklaşan duruşmada ne yapılacak?",
     "Bu ay ödenmesi gereken faturalar neler?",
     "KVKK projesinde benden beklenen görevler?",
     "Hizmet sözleşmemi özetle",
@@ -91,8 +99,8 @@ function AIAssistantPane() {
           Juris AI Asistan
         </div>
         <p className="text-[12px] text-juris-ink-2 leading-relaxed">
-          Dosyalarınız ve belgeleriniz hakkında soru sorabilirsiniz.
-          <span className="text-juris-navy font-semibold"> Avukatlık sırrı</span> kapsamında cevaplar.
+          Merhaba {firstName}, dosyalarınız ve belgeleriniz hakkında soru sorabilirsiniz.{" "}
+          <span className="text-juris-navy font-semibold">Avukatlık sırrı</span> kapsamında cevaplar.
         </p>
       </div>
 
@@ -119,11 +127,19 @@ function AIAssistantPane() {
 
 // ─────────────── Mesajlar ───────────────
 
-function MessagesPane() {
+function MessagesPane({
+  advisorName, advisorInitials, managingPartnerName,
+}: {
+  advisorName: string;
+  advisorInitials: string;
+  managingPartnerName: string | null;
+}) {
+  // Design-matched mock, but senders + attribution use real context
   const messages: Array<{
     id: string;
     subject: string;
     sender: string;
+    initials: string;
     matterRef?: string;
     preview: string;
     time: string;
@@ -131,9 +147,9 @@ function MessagesPane() {
   }> = [
     {
       id: "m1",
-      subject: "Duruşma hazırlığı – 2026/412",
-      sender: "Av. Zeynep Arslan",
-      matterRef: "R-2026-412",
+      subject: "Duruşma hazırlığı",
+      sender: advisorName,
+      initials: advisorInitials,
       preview: "Bir de duruşma saatini 10:00 olarak teyit edelim lütfen. Er…",
       time: "15 dk",
       unread: 2,
@@ -141,8 +157,8 @@ function MessagesPane() {
     {
       id: "m2",
       subject: "KVKK projesi – çalışan eğitimi",
-      sender: "Av. Emre Kaya",
-      matterRef: "C-2026-012",
+      sender: advisorName,
+      initials: advisorInitials,
       preview: "Teşekkürler. 15 Nisan Çarşamba öğleden sonra müsait…",
       time: "2 gün",
     },
@@ -150,17 +166,21 @@ function MessagesPane() {
       id: "m3",
       subject: "Nisan faturası – onay",
       sender: "Juris Muhasebe",
+      initials: "JM",
       preview: "Nisan ayı danışmanlık faturanız sisteme yüklendi. Vade ta…",
       time: "3 saat",
       unread: 1,
     },
-    {
-      id: "m4",
-      subject: "Genel soru – yeni sözleşme şablonu",
-      sender: "Av. Zeynep Arslan",
-      preview: "Pazartesi 14:00 uygun. Teams link atıyorum.",
-      time: "5 gün",
-    },
+    ...(managingPartnerName
+      ? [{
+          id: "m4",
+          subject: "Genel değerlendirme",
+          sender: managingPartnerName,
+          initials: managingPartnerName.split(" ").map((p) => p[0]).join("").slice(0, 2).toUpperCase(),
+          preview: "Pazartesi 14:00 uygun. Teams link atıyorum.",
+          time: "5 gün",
+        }]
+      : []),
   ];
 
   return (
@@ -174,11 +194,11 @@ function MessagesPane() {
       </button>
 
       <ul className="flex flex-col">
-        {messages.map((m) => (
+        {messages.map((m, idx) => (
           <li
             key={m.id}
             className="py-3 cursor-pointer hover:bg-juris-paper-2 -mx-2 px-2 rounded-md transition-colors relative"
-            style={m.id !== "m4" ? { borderBottom: "1px solid #EEF1F5" } : {}}
+            style={idx < messages.length - 1 ? { borderBottom: "1px solid #EEF1F5" } : {}}
           >
             <div className="flex items-start justify-between gap-2 mb-0.5">
               <div className="text-[13px] font-semibold text-juris-navy leading-tight">
@@ -215,7 +235,7 @@ function MessagesPane() {
 
 // ─────────────── Aktivite ───────────────
 
-function ActivityPane() {
+function ActivityPane({ firstName, advisorName }: { firstName: string; advisorName: string }) {
   const items: Array<{
     id: string;
     icon: React.ReactNode;
@@ -224,14 +244,14 @@ function ActivityPane() {
     detail: string;
     time: string;
   }> = [
-    { id: "a1", icon: <MessageSquare size={11} />, tone: "navy",    title: "Av. Zeynep mesaj gönderdi", detail: "Duruşma hazırlığı – 2026/412",                       time: "Bugün 14:30" },
-    { id: "a2", icon: <FileText size={11} />,      tone: "blue",    title: "Yeni belge yüklendi",       detail: "Bilirkişi raporu taslak.pdf (5.2 MB)",               time: "Bugün 11:20" },
-    { id: "a3", icon: <CheckCircle2 size={11} />,  tone: "green",   title: "Görev tamamlandı",           detail: "KVKK envanteri güncellendi",                         time: "Bugün 09:15" },
-    { id: "a4", icon: <MessageSquare size={11} />, tone: "neutral", title: "Selim Aksoy mesaj gönderdi", detail: "Duruşma hazırlığı – 2026/412",                       time: "Dün 16:05" },
-    { id: "a5", icon: <Receipt size={11} />,       tone: "amber",   title: "Fatura gönderildi",          detail: "F-2026-074 – KVKK projesi 2. taksit (28.500 ₺)",     time: "Dün 10:00" },
-    { id: "a6", icon: <Gavel size={11} />,         tone: "red",     title: "Duruşma planlandı",          detail: "2026/412 – 10 Nisan 10:00",                          time: "2 gün önce" },
-    { id: "a7", icon: <UserIcon size={11} />,      tone: "navy",    title: "Yeni görev atandı",          detail: "Delil klasörü – teslim edilecek ek belgeler",        time: "3 gün önce" },
-    { id: "a8", icon: <Receipt size={11} />,       tone: "green",   title: "Ödeme alındı",               detail: "F-2026-058 – 48.000 ₺",                              time: "3 gün önce" },
+    { id: "a1", icon: <MessageSquare size={11} />, tone: "navy",    title: `${advisorName} mesaj gönderdi`, detail: "Duruşma hazırlığı",                                 time: "Bugün 14:30" },
+    { id: "a2", icon: <FileText size={11} />,      tone: "blue",    title: "Yeni belge yüklendi",          detail: "Bilirkişi raporu taslak.pdf (5.2 MB)",              time: "Bugün 11:20" },
+    { id: "a3", icon: <CheckCircle2 size={11} />,  tone: "green",   title: "Görev tamamlandı",              detail: "KVKK envanteri güncellendi",                        time: "Bugün 09:15" },
+    { id: "a4", icon: <MessageSquare size={11} />, tone: "neutral", title: `${firstName} mesaj gönderdi`,   detail: "Duruşma hazırlığı",                                 time: "Dün 16:05" },
+    { id: "a5", icon: <Receipt size={11} />,       tone: "amber",   title: "Fatura gönderildi",            detail: "F-2026-074 – KVKK projesi 2. taksit (28.500 ₺)",    time: "Dün 10:00" },
+    { id: "a6", icon: <Gavel size={11} />,         tone: "red",     title: "Duruşma planlandı",            detail: "10 Nisan 10:00",                                    time: "2 gün önce" },
+    { id: "a7", icon: <UserIcon size={11} />,      tone: "navy",    title: "Yeni görev atandı",            detail: "Delil klasörü – teslim edilecek ek belgeler",       time: "3 gün önce" },
+    { id: "a8", icon: <Receipt size={11} />,       tone: "green",   title: "Ödeme alındı",                  detail: "F-2026-058 – 48.000 ₺",                             time: "3 gün önce" },
   ];
 
   const color = (t: string) => {

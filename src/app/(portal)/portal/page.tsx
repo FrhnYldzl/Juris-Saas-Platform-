@@ -6,7 +6,7 @@ import {
 import { format } from "date-fns";
 import { tr } from "date-fns/locale";
 import { requireTenant } from "@/lib/tenancy";
-import { prisma } from "@/lib/prisma";
+import { loadPortalContext, initialsOf, firstNameOf } from "@/lib/portal-context";
 import { formatDateTR, formatTRY } from "@/lib/utils";
 import { FIRM_INFO } from "@/lib/firm-info";
 
@@ -25,24 +25,13 @@ export default async function ClientPortalPage({
 }: {
   searchParams: Promise<{ view?: ViewKey; sub?: string }>;
 }) {
-  const { firmId, email } = await requireTenant();
+  const { firmId, email, name: sessionName } = await requireTenant();
   const params = await searchParams;
   const view: ViewKey = params.view ?? "ozet";
 
-  const contact = await prisma.contact.findFirst({
-    where: { firmId, email, isClient: true },
-    include: {
-      matters: {
-        orderBy: { updatedAt: "desc" },
-        include: {
-          _count: { select: { documents: true, tasks: true } },
-        },
-      },
-      invoices: { orderBy: { issuedAt: "desc" } },
-    },
-  });
+  const ctx = await loadPortalContext(firmId, email);
 
-  if (!contact) {
+  if (!ctx) {
     return (
       <div
         className="rounded-xl p-12 text-center bg-white"
@@ -64,20 +53,67 @@ export default async function ClientPortalPage({
     );
   }
 
-  const firstName = (contact.name ?? "Müvekkil").split(" ")[0];
-  const greeting = `${firstName} Bey`;
+  const contact = ctx.contact;
+
+  // Full invoice list for the client
+  const invoices = await (await import("@/lib/prisma")).prisma.invoice.findMany({
+    where: { firmId, clientId: contact.id },
+    orderBy: { issuedAt: "desc" },
+  });
+
+  const firstName = firstNameOf(sessionName || contact.name || "Müvekkil") || "Müvekkil";
+  const greetingTitle = guessSalutation(firstName, contact.type);
 
   if (view === "hukuk") {
     const sub: HukukSub = (params.sub as HukukSub) ?? "danismanlik";
-    return <HukukView matters={contact.matters} sub={sub} />;
+    const matters = contact.matters.map((m) => ({
+      id: m.id, matterNumber: m.matterNumber, title: m.title,
+      type: m.type, status: m.status, description: m.description,
+      openedAt: m.openedAt, _count: { documents: 0, tasks: 0 },
+      assignee: m.assignees[0]?.user?.name ?? ctx.advisor?.name ?? "Atanmadı",
+    }));
+    return <HukukView matters={matters} sub={sub} />;
   }
 
   if (view === "idari") {
     const sub: IdariSub = (params.sub as IdariSub) ?? "fatura";
-    return <IdariView invoices={contact.invoices} sub={sub} clientName={contact.companyName ?? contact.name} />;
+    return <IdariView
+      invoices={invoices.map((i) => ({
+        id: i.id, invoiceNumber: i.invoiceNumber, status: i.status,
+        total: i.total, issuedAt: i.issuedAt, dueAt: i.dueAt, paidAt: i.paidAt,
+      }))}
+      sub={sub}
+      clientName={contact.companyName ?? contact.name}
+      contact={{
+        name: contact.name, email: contact.email, phone: contact.phone,
+        companyName: contact.companyName, type: contact.type,
+      }}
+      advisor={ctx.advisor}
+      managingPartner={ctx.managingPartner}
+    />;
   }
 
-  return <OzetView greeting={greeting} matters={contact.matters} invoices={contact.invoices} />;
+  return <OzetView
+    greeting={greetingTitle}
+    matters={contact.matters.map((m) => ({
+      id: m.id, matterNumber: m.matterNumber, title: m.title, type: m.type,
+      status: m.status, nextHearingAt: m.nextHearingAt,
+      _count: { documents: 0, tasks: 0 },
+    }))}
+    invoices={invoices.map((i) => ({
+      id: i.id, invoiceNumber: i.invoiceNumber, status: i.status,
+      total: i.total, issuedAt: i.issuedAt, dueAt: i.dueAt,
+    }))}
+    advisor={ctx.advisor}
+    managingPartner={ctx.managingPartner}
+  />;
+}
+
+function guessSalutation(firstName: string, contactType: string): string {
+  // Simple Turkish salutation: "<Ad> Bey" for company representatives. Individual
+  // clients may prefer no title. The UI still falls back to "merhaba <firstName>".
+  if (contactType === "COMPANY") return `${firstName} Bey`;
+  return firstName;
 }
 
 // ========================================================================
@@ -85,11 +121,13 @@ export default async function ClientPortalPage({
 // ========================================================================
 
 function OzetView({
-  greeting, matters, invoices,
+  greeting, matters, invoices, advisor, managingPartner,
 }: {
   greeting: string;
   matters: Array<{ id: string; matterNumber: string; title: string; type: string; status: string; nextHearingAt: Date | null; _count: { documents: number; tasks: number } }>;
   invoices: Array<{ id: string; invoiceNumber: string; status: string; total: unknown; issuedAt: Date; dueAt: Date | null }>;
+  advisor: { name: string; title: string | null; email: string; phone: string | null } | null;
+  managingPartner: { name: string; title: string | null } | null;
 }) {
   const today = new Date();
   const todayLabel = format(today, "d MMMM EEEE", { locale: tr }).toUpperCase();
@@ -106,6 +144,12 @@ function OzetView({
   const unpaidInvoices = invoices.filter((i) => i.status === "SENT" || i.status === "OVERDUE");
   const overdueCount   = invoices.filter((i) => i.status === "OVERDUE").length;
   const unpaidSum      = unpaidInvoices.reduce((s, i) => s + toNum(i.total), 0) || 72_000;
+
+  const advisorInitials = advisor?.name ? initialsOf(advisor.name) : "—";
+  const advisorName     = advisor?.name  ?? "Avukat atanmadı";
+  const advisorTitle    = advisor?.title ?? "Sorumlu avukat";
+  const advisorEmail    = advisor?.email ?? null;
+  const advisorPhone    = advisor?.phone ?? null;
 
   return (
     <div className="flex flex-col gap-7 max-w-[900px]">
@@ -127,7 +171,7 @@ function OzetView({
         </div>
       </div>
 
-      {/* 4 KPI cards w/ colored left borders */}
+      {/* 4 KPI cards w/ colored top border */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <PortalKpi label="AKTİF DOSYALAR"    value={String(activeMatters.length || 5)} sub={`${consultingCount || 2} danışmanlık · ${disputeCount || 3} dava`} accent="#0A2240" />
         <PortalKpi label="BEKLEYEN GÖREVLERİNİZ" value="5" sub="Juris sizden bekliyor" accent="#B4701C" valueTone="#B4701C" />
@@ -202,13 +246,13 @@ function OzetView({
                 Avukat ekibi mesajınıza 2 saat içinde dönüş yapar. Acil konular için doğrudan arayın.
               </p>
             </div>
-            <button
-              type="button"
+            <a
+              href={advisorEmail ? `mailto:${advisorEmail}` : "#"}
               className="relative mt-3 w-full inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-md text-[12px] font-semibold text-white transition-colors"
               style={{ background: "#BC2F2C" }}
             >
               Mesaj gönder →
-            </button>
+            </a>
           </div>
         </div>
       </section>
@@ -223,43 +267,49 @@ function OzetView({
             className="w-10 h-10 rounded-full inline-flex items-center justify-center text-white text-[12px] font-bold shrink-0"
             style={{ background: "#BC2F2C" }}
           >
-            AZ
+            {advisorInitials}
           </div>
           <div className="flex-1 min-w-0">
             <div className="text-[10px] uppercase tracking-[0.14em] text-juris-ink-3 font-semibold">
               SORUMLU AVUKAT
             </div>
             <div className="text-[15px] font-semibold text-juris-navy mt-1">
-              Av. Zeynep Arslan
+              {advisorName}
             </div>
             <div className="text-[12px] text-juris-red font-medium">
-              Kıdemli Ortak · Uyuşmazlık Çözümü
+              {advisorTitle}
             </div>
             <div className="flex flex-col gap-1 mt-3 text-[12px] text-juris-ink-2">
-              <a href="tel:+905396109027" className="inline-flex items-center gap-2 hover:text-juris-red">
-                <Phone size={11} className="text-juris-ink-3" /> +90 539 610 90 27
-              </a>
-              <a href="mailto:zeynep.arslan@jurishukuk.com" className="inline-flex items-center gap-2 hover:text-juris-red">
-                <Mail size={11} className="text-juris-ink-3" /> zeynep.arslan@jurishukuk.com
-              </a>
+              {advisorPhone && (
+                <a href={`tel:${advisorPhone.replace(/\s/g, "")}`} className="inline-flex items-center gap-2 hover:text-juris-red">
+                  <Phone size={11} className="text-juris-ink-3" /> {advisorPhone}
+                </a>
+              )}
+              {advisorEmail && (
+                <a href={`mailto:${advisorEmail}`} className="inline-flex items-center gap-2 hover:text-juris-red">
+                  <Mail size={11} className="text-juris-ink-3" /> {advisorEmail}
+                </a>
+              )}
             </div>
           </div>
         </div>
 
-        <div
-          className="md:w-[280px] md:pl-6 flex flex-col"
-          style={{ borderLeft: "1px solid #EEF1F5" }}
-        >
-          <div className="text-[10px] uppercase tracking-[0.14em] text-juris-ink-3 font-semibold">
-            MANAGING PARTNER
+        {managingPartner && (
+          <div
+            className="md:w-[280px] md:pl-6 flex flex-col"
+            style={{ borderLeft: "1px solid #EEF1F5" }}
+          >
+            <div className="text-[10px] uppercase tracking-[0.14em] text-juris-ink-3 font-semibold">
+              MANAGING PARTNER
+            </div>
+            <div className="text-[14px] font-semibold text-juris-navy mt-1">
+              {managingPartner.name}
+            </div>
+            <div className="text-[11.5px] text-juris-ink-3 mt-0.5">
+              Kritik durumlar için
+            </div>
           </div>
-          <div className="text-[14px] font-semibold text-juris-navy mt-1">
-            Av. Mehmet Yıldız
-          </div>
-          <div className="text-[11.5px] text-juris-ink-3 mt-0.5">
-            Kritik durumlar için
-          </div>
-        </div>
+        )}
       </div>
 
       {/* Sizden beklenen görevler */}
@@ -317,8 +367,8 @@ function OzetView({
         >
           <ActivityRow
             icon={<MessageSquare size={11} />} tone="neutral"
-            title="Av. Zeynep mesaj gönderdi"
-            detail="Duruşma hazırlığı – 2026/412"
+            title={`${advisorName.split(" ").slice(-1)[0] ?? advisorName} mesaj gönderdi`}
+            detail="Duruşma hazırlığı"
             time="Bugün 14:30"
           />
           <ActivityRow
@@ -335,8 +385,8 @@ function OzetView({
           />
           <ActivityRow
             icon={<MessageSquare size={11} />} tone="neutral"
-            title="Selim Aksoy mesaj gönderdi"
-            detail="Duruşma hazırlığı – 2026/412"
+            title="Tarafınızca mesaj gönderildi"
+            detail="Duruşma hazırlığı"
             time="Dün 16:05"
             isLast
           />
@@ -524,7 +574,7 @@ function ActivityRow({
 function HukukView({
   matters, sub,
 }: {
-  matters: Array<{ id: string; matterNumber: string; title: string; type: string; status: string; description: string | null; openedAt: Date; _count: { documents: number; tasks: number } }>;
+  matters: Array<{ id: string; matterNumber: string; title: string; type: string; status: string; description: string | null; openedAt: Date; _count: { documents: number; tasks: number }; assignee: string }>;
   sub: HukukSub;
 }) {
   const danismanlik = matters.filter((m) => m.type === "CONSULTING");
@@ -572,7 +622,7 @@ function HukukView({
               description={m.description ?? ""}
               docs={m._count.documents}
               tasks={m._count.tasks}
-              assignee="Av. Zeynep Arslan"
+              assignee={m.assignee}
             />
           ))
         )}
@@ -676,7 +726,6 @@ function MatterCard({
 
 // Design-matched fallback cards when DB is empty
 function FallbackMatters({ type }: { type: HukukSub }) {
-  const now = new Date(2026, 3, 22);
   const mocks =
     type === "danismanlik"
       ? [
@@ -714,7 +763,6 @@ function FallbackMatters({ type }: { type: HukukSub }) {
           },
         ];
 
-  void now;
   return (
     <>
       {mocks.map((m) => (
@@ -740,11 +788,14 @@ function FallbackMatters({ type }: { type: HukukSub }) {
 // ========================================================================
 
 function IdariView({
-  invoices, sub, clientName,
+  invoices, sub, clientName, contact, advisor, managingPartner,
 }: {
   invoices: Array<{ id: string; invoiceNumber: string; status: string; total: unknown; issuedAt: Date; dueAt: Date | null; paidAt: Date | null }>;
   sub: IdariSub;
   clientName: string;
+  contact: { name: string; email: string | null; phone: string | null; companyName: string | null; type: string };
+  advisor: { name: string; title: string | null; email: string; phone: string | null } | null;
+  managingPartner: { name: string; title: string | null; email: string; phone: string | null } | null;
 }) {
   return (
     <div className="flex flex-col gap-6 max-w-[960px]">
@@ -775,7 +826,7 @@ function IdariView({
       {sub === "fatura"   && <FaturaSub invoices={invoices} />}
       {sub === "sozlesme" && <SozlesmeSub clientName={clientName} />}
       {sub === "kvkk"     && <KvkkSub />}
-      {sub === "yetkili"  && <YetkiliSub clientName={clientName} />}
+      {sub === "yetkili"  && <YetkiliSub clientName={clientName} contact={contact} advisor={advisor} managingPartner={managingPartner} />}
     </div>
   );
 }
@@ -1180,9 +1231,16 @@ function KvkkSub() {
   );
 }
 
-// ── Yetkili Kişiler (slim) ──
+// ── Yetkili Kişiler (dynamic) ──
 
-function YetkiliSub({ clientName }: { clientName: string }) {
+function YetkiliSub({
+  clientName, contact, advisor, managingPartner,
+}: {
+  clientName: string;
+  contact: { name: string; email: string | null; phone: string | null; companyName: string | null; type: string };
+  advisor: { name: string; title: string | null; email: string; phone: string | null } | null;
+  managingPartner: { name: string; title: string | null; email: string; phone: string | null } | null;
+}) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <div
@@ -1193,16 +1251,32 @@ function YetkiliSub({ clientName }: { clientName: string }) {
           MÜVEKKİL TARAFI
         </div>
         <dl className="grid grid-cols-[120px_1fr] gap-y-3 text-[13px]">
-          <dt className="text-juris-ink-3">Şirket</dt>
-          <dd className="text-juris-navy font-medium">{clientName}</dd>
+          {contact.type === "COMPANY" && (
+            <>
+              <dt className="text-juris-ink-3">Şirket</dt>
+              <dd className="text-juris-navy font-medium">{clientName}</dd>
+            </>
+          )}
           <dt className="text-juris-ink-3">Yetkili</dt>
-          <dd className="text-juris-navy font-medium">Selim Aksoy</dd>
-          <dt className="text-juris-ink-3">Ünvan</dt>
-          <dd className="text-juris-ink-2">Yönetim Kurulu Başkanı / CEO</dd>
-          <dt className="text-juris-ink-3">E-posta</dt>
-          <dd className="text-juris-ink-2 mono text-[12px]">selim.aksoy@aksoyinsaat.com</dd>
-          <dt className="text-juris-ink-3">Telefon</dt>
-          <dd className="text-juris-ink-2 mono text-[12px]">+90 312 455 89 00</dd>
+          <dd className="text-juris-navy font-medium">{contact.name}</dd>
+          {contact.type === "COMPANY" && (
+            <>
+              <dt className="text-juris-ink-3">Ünvan</dt>
+              <dd className="text-juris-ink-2">Yetkili / CEO</dd>
+            </>
+          )}
+          {contact.email && (
+            <>
+              <dt className="text-juris-ink-3">E-posta</dt>
+              <dd className="text-juris-ink-2 mono text-[12px]">{contact.email}</dd>
+            </>
+          )}
+          {contact.phone && (
+            <>
+              <dt className="text-juris-ink-3">Telefon</dt>
+              <dd className="text-juris-ink-2 mono text-[12px]">{contact.phone}</dd>
+            </>
+          )}
         </dl>
       </div>
 
@@ -1214,9 +1288,32 @@ function YetkiliSub({ clientName }: { clientName: string }) {
           JURIS TARAFI
         </div>
         <div className="flex flex-col gap-3">
-          <ContactBlock initials="AZ" name="Av. Zeynep Arslan" title="Kıdemli Ortak · Sorumlu avukat" email="zeynep.arslan@jurishukuk.com" phone="+90 539 610 90 27" />
-          <div style={{ borderTop: "1px solid #EEF1F5" }} />
-          <ContactBlock initials="MY" name="Av. Mehmet Yıldız" title="Managing Partner · Kritik durum" email="mehmet.yildiz@jurishukuk.com" phone="+90 312 xxx xx xx" />
+          {advisor && (
+            <ContactBlock
+              initials={initialsOf(advisor.name)}
+              name={advisor.name}
+              title={`${advisor.title ?? "Sorumlu avukat"} · Dosya sorumlusu`}
+              email={advisor.email}
+              phone={advisor.phone ?? "+90 xxx xxx xx xx"}
+            />
+          )}
+          {managingPartner && advisor?.name !== managingPartner.name && (
+            <>
+              <div style={{ borderTop: "1px solid #EEF1F5" }} />
+              <ContactBlock
+                initials={initialsOf(managingPartner.name)}
+                name={managingPartner.name}
+                title={`${managingPartner.title ?? "Managing Partner"} · Kritik durum`}
+                email={managingPartner.email}
+                phone={managingPartner.phone ?? "+90 xxx xxx xx xx"}
+              />
+            </>
+          )}
+          {!advisor && !managingPartner && (
+            <div className="text-[12px] text-juris-ink-3 py-3 text-center">
+              Avukat atanması bekleniyor.
+            </div>
+          )}
         </div>
         <div className="mt-4 pt-4 flex items-center gap-2 text-[10.5px] text-juris-ink-4" style={{ borderTop: "1px solid #EEF1F5" }}>
           <MapPin size={10} />
