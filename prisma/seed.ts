@@ -760,6 +760,247 @@ async function main() {
   console.log("✓ Marketing content data (6 items)");
 
   // ============================================================
+  // PAZARLAMA · Nisan 2026 içerik planı (5 fresh drafts)
+  // ============================================================
+  // These are the month's planned pieces — user walks them through the
+  // 6-stage workflow. Idempotent: skipped if the signature title is already
+  // present (so redeploys don't duplicate).
+  const aprilSignature = "NİSAN-2026-KVKK-KURUMSAL-KONTROL-LISTESI";
+  const existingApril = await prisma.contentItem.findFirst({
+    where: { firmId: firm.id, tags: { has: aprilSignature } },
+    select: { id: true },
+  });
+
+  if (!existingApril) {
+    await prisma.contentItem.createMany({
+      data: [
+        // 1 — Blog · flagship SEO article
+        {
+          firmId: firm.id,
+          title: "KVKK 2026: Kurumsal Uyum Kontrol Listesi",
+          summary:
+            "2026 KVKK denetim sürecine hazır mısınız? Envanterden aydınlatma metinlerine, çalışan eğitiminden iç denetime — 12 maddelik uygulanabilir kontrol listesi.",
+          channel: "BLOG",
+          contentType: "SEO Makale",
+          status: "DRAFT",
+          author: "Av. Zeynep Arslan",
+          aiAssisted: true,
+          draftVersion: 1,
+          readMinutes: 10,
+          metaTitle: "KVKK 2026 Kurumsal Uyum Kontrol Listesi — Juris",
+          metaDescription:
+            "2026 KVKK denetimine hazır mısınız? Envanter, aydınlatma, çalışan eğitimi, iç denetim — uygulanabilir 12 maddelik kontrol listesi.",
+          keywords: ["KVKK 2026", "uyum", "envanter", "aydınlatma metni", "çalışan eğitimi", "iç denetim"],
+          publishAt: new Date(2026, 3, 24, 10, 0),
+          tags: ["kvkk", "kurumsal", aprilSignature],
+          body: [
+            "# KVKK 2026: Kurumsal Uyum Kontrol Listesi",
+            "",
+            "## Özet",
+            "",
+            "2026 yılı KVKK denetimleri başladı. Bu rehberde 12 maddelik bir kontrol listesi ile firmanızın uyum seviyesini ölçebilir, açıkları hızla kapatabilirsiniz.",
+            "",
+            "## 1. Veri Envanteri Güncel mi?",
+            "",
+            "Her departmanın hangi kişisel veriyi hangi amaçla işlediğini gösteren güncel envanter olmadan VERBİS bildirimi doğru olamaz. En az 6 ayda bir güncellenmeli.",
+            "",
+            "## 2. Aydınlatma Metinleri",
+            "",
+            "- Müvekkil / müşteri aydınlatma metni",
+            "- Çalışan aydınlatma metni",
+            "- Aday aydınlatma metni (İK süreci)",
+            "- Ziyaretçi / tedarikçi aydınlatma metni",
+            "",
+            "## 3. Açık Rıza Formları",
+            "",
+            "Hangi süreçlerde açık rıza gerekli? Pazarlama iletişimi, kamera kaydı, özel nitelikli veri işleme.",
+            "",
+            "## 4. Çalışan Eğitimi",
+            "",
+            "Yılda en az 1 kez tüm çalışanlara KVKK eğitimi verilmeli; yeni başlayanlar için oryantasyon kapsamında zorunlu modül konmalı.",
+            "",
+            "## 5. Veri İhlal Müdahale Planı",
+            "",
+            "Bir veri ihlali tespit edildiğinde 72 saat içinde Kurul bildirimi zorunlu. Müdahale prosedürü yazılı olmalı, sorumlu kişi atanmalı.",
+            "",
+            "## 6. Teknik ve İdari Tedbirler",
+            "",
+            "Erişim logları, şifreleme, yedekleme politikası, rol bazlı yetkilendirme — teknik ekiple birlikte belgelenmeli.",
+            "",
+            "## 7. İç Denetim",
+            "",
+            "Yılda 1 kez bağımsız iç denetim raporu; Kurul denetiminde ilk istenen belgedir.",
+            "",
+            "## 8. Veri Sorumlusu Temsilcisi",
+            "",
+            "Kurum dışına atanan temsilcinin iletişim bilgileri VERBİS'te güncel olmalı.",
+            "",
+            "## 9. Sınır Ötesi Veri Aktarımı",
+            "",
+            "2026 düzenlemeleriyle yurt dışı aktarımlar için Kurul onayı ya da Standart Sözleşme zorunlu hale geldi.",
+            "",
+            "## 10. Çerez Politikası",
+            "",
+            "Web sitenizde çerez onay banner'ı var mı? Analitik ve pazarlama çerezleri için granüler rıza alınıyor mu?",
+            "",
+            "## 11. Tedarikçi Sözleşmeleri",
+            "",
+            "Bulut sağlayıcılar, CRM, bordro firmaları gibi üçüncü taraflarla KVKK uyum maddeli sözleşme imzalı olmalı.",
+            "",
+            "## 12. İlgili Kişi Başvuru Süreci",
+            "",
+            "Silme / düzeltme / bilgi alma talepleri için 30 gün içinde yanıt mekanizması kurulu mu?",
+            "",
+            "## Sonuç",
+            "",
+            "Bu 12 maddenin her birinde **eksiksiz ✓** alabildiyseniz 2026 denetimine hazırsınız. Bir tane bile boş işaret kaldıysa, Juris ekibi olarak 4 haftalık uyum projesiyle kapatmanıza yardımcı oluyoruz.",
+            "",
+            "**Danışmanlık:** zeynep.arslan@jurishukuk.com",
+          ].join("\n"),
+        },
+
+        // 2 — LinkedIn post · teaser for the blog
+        {
+          firmId: firm.id,
+          title: "KVKK denetimine hazır mısınız?",
+          summary:
+            "12 maddelik kontrol listesi — çalışan eğitiminden sınır ötesi aktarıma. Tümünü işaretleyebiliyor musunuz?",
+          channel: "LINKEDIN",
+          contentType: "LinkedIn Post",
+          status: "DRAFT",
+          author: "Av. Zeynep Arslan",
+          aiAssisted: true,
+          draftVersion: 1,
+          metaTitle: "KVKK 2026 — Kurumsal Uyum Kontrol Listesi",
+          keywords: ["KVKK", "2026", "uyum", "kurumsal", "veri"],
+          publishAt: new Date(2026, 3, 23, 9, 0),
+          tags: ["kvkk", "linkedin", aprilSignature],
+          body: [
+            "Geçen hafta 3 farklı firmada KVKK iç denetim yaptık.",
+            "",
+            "Hepsinde aynı 4 açık:",
+            "",
+            "1️⃣ Aydınlatma metinleri 2022 tarihli — güncelliğini yitirmiş",
+            "2️⃣ Yeni işe başlayan çalışanlara KVKK eğitimi verilmemiş",
+            "3️⃣ Yurt dışı aktarımlar için Standart Sözleşme yok",
+            "4️⃣ Veri envanteri 1 yıldır güncellenmemiş",
+            "",
+            "Kurul denetiminde ilk istenen belgeler bunlar.",
+            "",
+            "2026 için hazırladığımız 12 maddelik kontrol listesini blog yazısında paylaştık — firmanızın uyum seviyesini 10 dakikada ölçebilirsiniz.",
+            "",
+            "Kontrol listesi linki yorumda 👇",
+          ].join("\n"),
+        },
+
+        // 3 — Newsletter · monthly roundup
+        {
+          firmId: firm.id,
+          title: "Nisan 2026 Hukuk Bülteni",
+          summary:
+            "Bu ay: KVKK 2026 rehberi · Yeni tebligat kararnamesi · Rekabet Kurulu e-ticaret cezaları · Nisan webinarı davetimiz.",
+          channel: "NEWSLETTER",
+          contentType: "Newsletter",
+          status: "DRAFT",
+          author: "Juris Ekibi",
+          aiAssisted: true,
+          draftVersion: 1,
+          readMinutes: 4,
+          metaTitle: "Juris · Nisan 2026 Hukuk Bülteni",
+          keywords: ["bülten", "nisan 2026", "hukuk", "güncel mevzuat"],
+          publishAt: new Date(2026, 3, 28, 7, 0),
+          tags: ["newsletter", "aylık", aprilSignature],
+          body: [
+            "Merhaba,",
+            "",
+            "Nisan ayının öne çıkan hukuki gelişmelerini bu bültende derledik. 4 dakikada okuyabilirsiniz.",
+            "",
+            "## Bu sayıda",
+            "",
+            "- **KVKK 2026 Kontrol Listesi** — kurumsal uyum için 12 madde",
+            "- **Yeni Tebligat Kararnamesi** — e-Tebligat zorunluluğu genişliyor",
+            "- **Rekabet Kurulu e-Ticaret Davaları** — 2026 Q1 raporu",
+            "- **Juris Webinarı** — 18 Nisan · KVKK saha uygulaması",
+            "",
+            "## KVKK 2026 Kontrol Listesi",
+            "",
+            "Geçen hafta 3 firmada yaptığımız iç denetim sonucunda, Kurul denetiminde en çok sorun yaşanan 12 alan için uygulanabilir bir kontrol listesi hazırladık. Envanter, aydınlatma, çalışan eğitimi, sınır ötesi aktarım ve daha fazlası.",
+            "",
+            "## Tebligat Kararnamesi",
+            "",
+            "Nisan ayında Resmi Gazete'de yayınlanan düzenlemeyle e-Tebligat zorunluluğu 5 milyon TL üzeri ciroya sahip tüm şirketlere genişletildi. Geçiş süresi 1 Haziran 2026.",
+            "",
+            "## Rekabet Kurulu",
+            "",
+            "2026 Q1'de e-ticaret platformlarına kesilen cezalar 280 milyon TL'ye ulaştı. Aşağı yönlü fiyat baskısı ve most favoured nation klozları ana ihlal kategorileri.",
+            "",
+            "## Webinar — 18 Nisan",
+            "",
+            "Av. Zeynep Arslan ve ekibi KVKK saha uygulamalarını anlatacak. Kayıt için blog üzerinden formu doldurabilirsiniz.",
+            "",
+            "Saygılarımızla,",
+            "Juris Avukatlık Ortaklığı",
+          ].join("\n"),
+        },
+
+        // 4 — Instagram carousel caption (actual card images built via /api/og/instagram)
+        {
+          firmId: firm.id,
+          title: "KVKK'da sık yapılan 5 hata",
+          summary:
+            "Kurul denetiminde tekrar eden 5 klasik hata — şirketinizde var mı?",
+          channel: "INSTAGRAM",
+          contentType: "Instagram Carousel",
+          status: "DRAFT",
+          author: "Juris Sosyal",
+          aiAssisted: true,
+          draftVersion: 1,
+          keywords: ["kvkk", "hata", "denetim", "kurumsal", "uyum", "veri koruma"],
+          publishAt: new Date(2026, 3, 25, 11, 30),
+          tags: ["kvkk", "instagram", "carousel", aprilSignature],
+          body: [
+            "Geçen hafta 3 firmada iç denetim yaptık. Hepsinde aynı hatalar.",
+            "",
+            "İşte Kurul denetiminde en sık karşılaşılan 5 hata ve nasıl kaçınılır:",
+            "",
+            "- Aydınlatma metinleri güncel değil (son güncelleme 2022)",
+            "- Yeni çalışanlara KVKK eğitimi verilmiyor",
+            "- Yurt dışı aktarımlar için Standart Sözleşme yok",
+            "- Veri envanteri 1 yıldır güncellenmemiş",
+            "- Veri ihlal müdahale planı yazılı değil",
+            "",
+            "Her biri Kurul'da 50K+ ceza potansiyeli.",
+          ].join("\n"),
+        },
+
+        // 5 — Whitepaper · thought leadership (long-form, planned)
+        {
+          firmId: firm.id,
+          title: "Yapay Zeka ve Hukuki Sorumluluk: Kurumlar için 2026 Rehberi",
+          summary:
+            "AI sistemlerinin hukuki kimliği, sözleşme sorumluluğu, KVKK kesişimi ve AB AI Act'in Türkiye yansımaları — kurumsal karar vericiler için 14 sayfa.",
+          channel: "BLOG",
+          contentType: "Whitepaper",
+          status: "IDEA",
+          author: "Av. Mehmet Yıldız",
+          aiAssisted: false,
+          readMinutes: 18,
+          metaTitle: "Yapay Zeka ve Hukuki Sorumluluk 2026 — Juris Whitepaper",
+          metaDescription:
+            "AI sistemlerinin hukuki kimliği, sözleşme sorumluluğu, KVKK kesişimi ve AB AI Act'in Türkiye yansımaları — kurumsal karar vericiler için rehber.",
+          keywords: ["yapay zeka", "AI Act", "hukuki sorumluluk", "KVKK", "sözleşme", "kurumsal"],
+          publishAt: new Date(2026, 4, 6, 10, 0),
+          tags: ["ai", "whitepaper", aprilSignature],
+        },
+      ],
+    });
+
+    console.log("✓ Nisan 2026 içerik planı (5 yeni taslak)");
+  } else {
+    console.log("↺ Nisan 2026 içerik planı zaten mevcut — atlandı");
+  }
+
+  // ============================================================
   // SATIŞ · 12 deals + 5 proposal templates (tasarım doc exact)
   // ============================================================
   const nis2026 = (d: number) => new Date(2026, 3, d, 10, 0);

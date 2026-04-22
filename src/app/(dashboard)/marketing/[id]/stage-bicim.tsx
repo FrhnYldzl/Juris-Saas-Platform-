@@ -3,7 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import {
-  Linkedin, Instagram, Mail, FileText as BlogIcon, Copy, CheckCircle2, ArrowRight,
+  Linkedin, Instagram, Mail, FileText as BlogIcon, Copy, CheckCircle2,
+  ArrowRight, Download, Eye, Palette, ExternalLink,
 } from "lucide-react";
 import type { ContentChannel } from "@prisma/client";
 
@@ -43,6 +44,16 @@ export function StageBicim({ item }: { item: {
     }
   };
 
+  // Visual preview URLs per channel — ? v= cache-bust so we re-render after saves
+  const v = Date.now();
+  const visualUrl =
+    tab === "blog"       ? `/api/og/blog/${item.id}?v=${v}` :
+    tab === "linkedin"   ? `/api/og/linkedin/${item.id}?v=${v}` :
+    tab === "instagram"  ? `/api/og/instagram/${item.id}?v=${v}` :
+                           null;
+
+  const htmlUrl = tab === "newsletter" ? `/api/html/newsletter/${item.id}?v=${v}` : null;
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-5">
       {/* Left: preview */}
@@ -55,7 +66,7 @@ export function StageBicim({ item }: { item: {
             Kanala göre biçim
           </h3>
           <p className="text-[12px] text-juris-ink-3 mt-1">
-            Ana taslağı her kanalın formatına göre önizle — kopyala, gerektiğinde editörde düzelt.
+            Her kanal için <strong className="text-juris-navy">hazır yayın formatı</strong> — metin + görsel + HTML. Kopyala, indir, paylaş.
           </p>
         </div>
 
@@ -85,11 +96,13 @@ export function StageBicim({ item }: { item: {
           })}
         </div>
 
-        {/* Preview body */}
+        {/* Text preview */}
         <div>
           <div className="flex items-center justify-between mb-2 text-[10.5px] text-juris-ink-4 uppercase tracking-wider font-semibold">
             <span>{channelContent.hint}</span>
-            <span className="mono">{channelContent.text.length} / {channelContent.limit}</span>
+            <span className="mono">
+              {channelContent.text.length} / {channelContent.limit}
+            </span>
           </div>
           <div
             className="rounded-md p-5 bg-white text-[13px] text-juris-ink-1 leading-relaxed whitespace-pre-wrap"
@@ -97,7 +110,9 @@ export function StageBicim({ item }: { item: {
               border: `1px solid ${channelContent.text.length > channelContent.limit ? "#BC2F2C" : "#E5E9F0"}`,
               fontFamily: tab === "blog" ? "'Playfair Display', Georgia, serif" : "inherit",
               background: tab === "instagram" ? "#FAFAFA" : "white",
-              minHeight: 300,
+              minHeight: 220,
+              maxHeight: 320,
+              overflowY: "auto",
             }}
           >
             {channelContent.text}
@@ -109,8 +124,8 @@ export function StageBicim({ item }: { item: {
           )}
         </div>
 
-        <div className="flex items-center justify-between gap-3 pt-3" style={{ borderTop: "1px solid #EEF1F5" }}>
-          <div className="flex items-center gap-2 text-[11px] text-juris-ink-3">
+        <div className="flex items-center justify-between gap-3 pt-3 flex-wrap" style={{ borderTop: "1px solid #EEF1F5" }}>
+          <div className="flex items-center gap-3 text-[11px] text-juris-ink-3">
             {channelContent.tips.map((tip, i) => (
               <span key={i} className="inline-flex items-center gap-1">
                 <span className="w-1 h-1 rounded-full bg-juris-red" />
@@ -125,22 +140,129 @@ export function StageBicim({ item }: { item: {
             style={{ border: "1px solid #E5E9F0" }}
           >
             {copied ? <CheckCircle2 size={11} className="text-juris-success" /> : <Copy size={11} />}
-            {copied ? "Kopyalandı" : "Kopyala"}
+            {copied ? "Kopyalandı" : "Metni kopyala"}
           </button>
         </div>
       </div>
 
-      {/* Right: channel meta */}
-      <aside className="flex flex-col gap-4">
+      {/* Right: visual preview */}
+      <div className="flex flex-col gap-4">
+        {/* Visual preview card */}
+        <div className="card p-5 flex flex-col gap-3">
+          <div className="flex items-center justify-between gap-2">
+            <div className="text-[10px] uppercase tracking-[0.14em] text-juris-red font-semibold inline-flex items-center gap-1.5">
+              <Palette size={11} /> Görsel (hazır yayın formatı)
+            </div>
+            <span className="text-[10px] text-juris-ink-4 mono">
+              {channelContent.visualSpec}
+            </span>
+          </div>
+
+          {visualUrl ? (
+            <div
+              className="relative rounded-md overflow-hidden"
+              style={{
+                border: "1px solid #E5E9F0",
+                background: "#F1F4F8",
+                aspectRatio: channelContent.aspectRatio,
+              }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={visualUrl}
+                alt={`${channelContent.format} önizleme`}
+                style={{ width: "100%", height: "100%", display: "block" }}
+              />
+            </div>
+          ) : htmlUrl ? (
+            <div
+              className="rounded-md overflow-hidden"
+              style={{ border: "1px solid #E5E9F0", background: "#F4F6FA", height: 420 }}
+            >
+              <iframe
+                src={htmlUrl}
+                title="Newsletter önizleme"
+                style={{ width: "100%", height: "100%", border: 0 }}
+              />
+            </div>
+          ) : null}
+
+          {/* Download + Preview buttons */}
+          <div className="flex items-center gap-2">
+            {visualUrl && (
+              <>
+                <a
+                  href={visualUrl}
+                  download={`juris-${tab}-${item.id.slice(0, 8)}.png`}
+                  className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-[11.5px] font-semibold text-white transition-all hover:shadow-sm"
+                  style={{ background: "#0A2240" }}
+                >
+                  <Download size={11} /> PNG İndir
+                </a>
+                <a
+                  href={visualUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center justify-center gap-1 px-3 py-2 rounded-md text-[11.5px] font-semibold text-juris-ink-2 hover:bg-juris-paper-2"
+                  style={{ border: "1px solid #E5E9F0" }}
+                  title="Tam boyutta aç"
+                >
+                  <ExternalLink size={11} />
+                </a>
+              </>
+            )}
+            {htmlUrl && (
+              <>
+                <a
+                  href={`${htmlUrl}&download=1`}
+                  download={`juris-newsletter-${item.id.slice(0, 8)}.html`}
+                  className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-[11.5px] font-semibold text-white transition-all hover:shadow-sm"
+                  style={{ background: "#0A2240" }}
+                >
+                  <Download size={11} /> HTML İndir
+                </a>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const res = await fetch(htmlUrl);
+                    const html = await res.text();
+                    await navigator.clipboard.writeText(html);
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                  }}
+                  className="inline-flex items-center justify-center gap-1 px-3 py-2 rounded-md text-[11.5px] font-semibold text-juris-ink-2 hover:bg-juris-paper-2"
+                  style={{ border: "1px solid #E5E9F0" }}
+                  title="HTML kopyala"
+                >
+                  {copied ? <CheckCircle2 size={11} className="text-juris-success" /> : <Copy size={11} />}
+                </button>
+                <a
+                  href={htmlUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center justify-center gap-1 px-3 py-2 rounded-md text-[11.5px] font-semibold text-juris-ink-2 hover:bg-juris-paper-2"
+                  style={{ border: "1px solid #E5E9F0" }}
+                  title="Tam ekran önizle"
+                >
+                  <Eye size={11} />
+                </a>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Channel meta */}
         <div className="card p-5">
-          <div className="text-[10px] uppercase tracking-[0.14em] text-juris-red font-semibold mb-3">
+          <div className="text-[10px] uppercase tracking-[0.14em] text-juris-ink-3 font-semibold mb-3">
             Kanal Özellikleri
           </div>
           <dl className="grid grid-cols-[90px_1fr] gap-y-2 text-[12px]">
             <dt className="text-juris-ink-3">Format</dt>
             <dd className="text-juris-ink-2">{channelContent.format}</dd>
             <dt className="text-juris-ink-3">Limit</dt>
-            <dd className="text-juris-ink-2 mono">{channelContent.limit.toLocaleString("tr-TR")} karakter</dd>
+            <dd className="text-juris-ink-2 mono">
+              {channelContent.limit.toLocaleString("tr-TR")} karakter
+            </dd>
             <dt className="text-juris-ink-3">Ton</dt>
             <dd className="text-juris-ink-2">{channelContent.tone}</dd>
             <dt className="text-juris-ink-3">En iyi saat</dt>
@@ -148,19 +270,7 @@ export function StageBicim({ item }: { item: {
           </dl>
         </div>
 
-        <div className="card p-5">
-          <div className="text-[10px] uppercase tracking-[0.14em] text-juris-red font-semibold mb-3">
-            Ana kanal
-          </div>
-          <p className="text-[13px] font-semibold text-juris-navy">
-            {channelLabel(item.channel)}
-          </p>
-          <p className="text-[11.5px] text-juris-ink-3 mt-1 leading-relaxed">
-            Bu içerik öncelikle <strong>{channelLabel(item.channel)}</strong> için planlandı; yukarıdaki diğer kanallar
-            türev dağıtım versiyonudur.
-          </p>
-        </div>
-
+        {/* Next step */}
         <div
           className="rounded-xl p-4"
           style={{ background: "#FAFBFD", border: "1px solid #EEF1F5" }}
@@ -169,7 +279,7 @@ export function StageBicim({ item }: { item: {
             Sıradaki adım — Onay
           </div>
           <p className="text-[12px] text-juris-ink-2 mb-3 leading-relaxed">
-            Tüm kanal biçimleri iyi görünüyorsa, ortağa inceleme talebi gönder.
+            Hem metin hem görsel hazırsa, ortağa inceleme talebi gönder.
           </p>
           <Link
             href={`/marketing/${item.id}?stage=onay`}
@@ -179,21 +289,12 @@ export function StageBicim({ item }: { item: {
             Onaya git <ArrowRight size={11} />
           </Link>
         </div>
-      </aside>
+      </div>
     </div>
   );
 }
 
 // ──────────────────────────────────────────
-
-function channelLabel(c: ContentChannel): string {
-  const m: Record<ContentChannel, string> = {
-    BLOG: "Blog", LINKEDIN: "LinkedIn", INSTAGRAM: "Instagram",
-    X: "X (Twitter)", NEWSLETTER: "Newsletter", PODCAST: "Podcast",
-    VIDEO: "Video", OTHER: "Diğer",
-  };
-  return m[c];
-}
 
 function buildChannelContent(
   tab: TabKey,
@@ -206,6 +307,7 @@ function buildChannelContent(
 ): {
   text: string; limit: number; hint: string; format: string; tone: string;
   bestTime: string; tips: string[];
+  visualSpec: string; aspectRatio: string;
 } {
   const body = item.body ?? "";
   const summary = item.summary ?? "";
@@ -217,9 +319,12 @@ function buildChannelContent(
     return {
       text, limit: 25_000,
       hint: "Blog post · SEO optimize, Markdown destekli",
-      format: "Markdown", tone: "Profesyonel, pedagojik",
+      format: "Markdown + Hero PNG",
+      tone: "Profesyonel, pedagojik",
       bestTime: "Salı 10:00 — Perşembe 14:00",
       tips: ["H2/H3 kullan", "8+ dk okuma hedefle"],
+      visualSpec: "1200 × 630 · Open Graph",
+      aspectRatio: "1200 / 630",
     };
   }
 
@@ -233,10 +338,12 @@ function buildChannelContent(
     return {
       text, limit: 3_000,
       hint: "LinkedIn Post · 3 000 karakter limitli, profesyonel ağ",
-      format: "Düz metin, emoji kıt",
+      format: "Düz metin + 1200×627 PNG",
       tone: "Profesyonel + ilk satır kanca (hook)",
       bestTime: "Salı-Çarşamba 08:30-10:00",
       tips: ["İlk 2 satır kritik", "3-5 hashtag"],
+      visualSpec: "1200 × 627 · LinkedIn",
+      aspectRatio: "1200 / 627",
     };
   }
 
@@ -245,11 +352,13 @@ function buildChannelContent(
     const text = `Merhaba,\n\n${tldr}\n\n━━━━━━━━━━━━━━━\n${item.title.toUpperCase()}\n━━━━━━━━━━━━━━━\n\n${body.slice(0, 1500)}${body.length > 1500 ? "\n\n…devamı için blog yazısını okuyun." : ""}\n\nSaygılarımızla,\n${item.author ?? "Juris Avukatlık Ortaklığı"}\n\n[Abonelikten çık] · [Arşiv]`;
     return {
       text, limit: 10_000,
-      hint: "E-posta bülten · uzun form kabul edilir",
-      format: "Plain text + markdown",
+      hint: "E-posta bülten · HTML + plain text birlikte",
+      format: "Responsive HTML email (inline CSS)",
       tone: "Dostça, bilgilendirici",
       bestTime: "Salı 07:00 (sabah okuma)",
       tips: ["TL;DR ile başla", "CTA net olsun"],
+      visualSpec: "600px genişlik · HTML",
+      aspectRatio: "",
     };
   }
 
@@ -261,12 +370,14 @@ function buildChannelContent(
     return {
       text, limit: 2_200,
       hint: "Instagram caption · 2 200 karakter · 10-30 hashtag",
-      format: "Plain text + emoji",
+      format: "1080×1350 PNG + caption",
       tone: "Samimi, görselle eşleşen",
       bestTime: "Hafta içi 11:00-13:00",
       tips: ["İlk satır kanca", "10+ hashtag"],
+      visualSpec: "1080 × 1350 · 4:5 portre",
+      aspectRatio: "1080 / 1350",
     };
   }
 
-  return { text: "", limit: 0, hint: "", format: "", tone: "", bestTime: "", tips: [] };
+  return { text: "", limit: 0, hint: "", format: "", tone: "", bestTime: "", tips: [], visualSpec: "", aspectRatio: "1" };
 }
