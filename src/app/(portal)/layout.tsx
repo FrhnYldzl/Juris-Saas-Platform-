@@ -1,33 +1,65 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
-import Link from "next/link";
-import { SignOutButton } from "@/components/shell/signout-button";
-import { JurisLogo } from "@/components/ui/brand-mark";
+import { prisma } from "@/lib/prisma";
+import { PortalLeftNav } from "./portal-left-nav";
+import { PortalRightPanel } from "./portal-right-panel";
+import { PortalTopbar } from "./portal-topbar";
+import { TweaksPanel } from "@/components/shell/tweaks-panel";
 
 export default async function PortalLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
   if (!session?.user) redirect("/login");
   if (session.user.role !== "CLIENT") redirect("/command");
 
+  // Resolve the client's Contact record so we can display firm + authority role
+  const contact = await prisma.contact.findFirst({
+    where: {
+      firmId: session.user.firmId,
+      email: session.user.email ?? undefined,
+      isClient: true,
+    },
+    select: {
+      name: true,
+      companyName: true,
+      type: true,
+      phone: true,
+      email: true,
+    },
+  });
+
+  const clientLabel =
+    contact?.type === "COMPANY"
+      ? contact.companyName ?? contact.name
+      : contact?.name ?? session.user.name;
+
+  const firstName = (session.user.name ?? "").split(" ")[0] || "Müvekkil";
+
   return (
-    <div className="min-h-screen" style={{ background: "var(--bg)" }}>
-      <header className="bg-juris-navy text-white px-6 py-4 flex items-center justify-between sticky top-0 z-10">
-        <Link href="/portal" className="flex items-center gap-4">
-          <JurisLogo variant="white" height={36} priority />
-          <div className="w-px h-7 bg-white/15" />
-          <div className="text-[11px] uppercase tracking-[0.14em] opacity-70 font-semibold">
-            Müvekkil Portalı
-          </div>
-        </Link>
-        <div className="flex items-center gap-3">
-          <div className="text-right">
-            <div className="text-sm font-semibold">{session.user.name}</div>
-            <div className="text-[10px] opacity-60">{session.user.email}</div>
-          </div>
-          <SignOutButton />
-        </div>
-      </header>
-      <main className="max-w-[1100px] mx-auto px-6 py-8">{children}</main>
+    <div className="min-h-screen" style={{ background: "#F4F6FA" }}>
+      <PortalTopbar userName={firstName} userEmail={session.user.email} />
+
+      <div
+        className="mx-auto grid gap-0"
+        style={{
+          maxWidth: 1480,
+          gridTemplateColumns: "240px 1fr 320px",
+          minHeight: "calc(100vh - 64px)",
+        }}
+      >
+        <PortalLeftNav
+          clientLabel={clientLabel ?? "Müvekkil"}
+          role="Yetkili / CEO"
+          advisorName="Av. Zeynep Arslan"
+          advisorTitle="Kıdemli Ortak"
+          advisorInitials="AZ"
+        />
+
+        <main className="px-8 py-7 overflow-x-hidden">{children}</main>
+
+        <PortalRightPanel />
+      </div>
+
+      <TweaksPanel />
     </div>
   );
 }
