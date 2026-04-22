@@ -46,6 +46,7 @@ model Firm {
   resourceContacts ResourceContact[]
   resourceEvents   ResourceEvent[]
   proposalTemplates ProposalTemplate[]
+  consultingContracts ConsultingContract[]
 
   @@map("firms")
 }
@@ -238,6 +239,45 @@ model ProposalTemplate {
 
   @@index([firmId])
   @@map("proposal_templates")
+}
+
+// ---------------- Finance · Consulting Contracts (Retainer) ----------------
+
+enum ConsultingDueType {
+  AY_BASI       // Ay başı (1-10 arası)
+  AY_ORTASI     // Ay ortası (15-25 arası)
+}
+
+enum ConsultingContractStatus {
+  AKTIF         // Aktif tahsilat
+  BEKLEMEDE     // Geçmiş dönem — tahsilat bekleniyor
+  PASIF         // Sözleşme pasif
+}
+
+model ConsultingContract {
+  id              String                   @id @default(cuid())
+  firmId          String                   @map("firm_id")
+  companyName     String                   @map("company_name")       // "Trakya Cam", "BSH" vb.
+  dueType         ConsultingDueType        @map("due_type")
+  retainerFee     Decimal                  @db.Decimal(14, 2) @map("retainer_fee")
+  sgkFee          Decimal?                 @db.Decimal(14, 2) @map("sgk_fee")  // SGK tarafı
+  tenureYears     Int                      @default(0) @map("tenure_years")
+  tenureMonths    Int                      @default(0) @map("tenure_months")
+  lastCollectedAt DateTime?                @map("last_collected_at")
+  nextDueAt       DateTime?                @map("next_due_at")
+  status          ConsultingContractStatus @default(AKTIF)
+  isOverdue       Boolean                  @default(false) @map("is_overdue")
+  assigneeName    String?                  @map("assignee_name")      // "Mehmet", "Elif" vb.
+  notes           String?                  @db.Text
+  createdAt       DateTime                 @default(now()) @map("created_at")
+  updatedAt       DateTime                 @updatedAt @map("updated_at")
+
+  firm Firm @relation(fields: [firmId], references: [id], onDelete: Cascade)
+
+  @@index([firmId])
+  @@index([firmId, status])
+  @@index([firmId, dueType])
+  @@map("consulting_contracts")
 }
 
 // ---------------- Matters (Dosyalar) ----------------

@@ -902,6 +902,93 @@ async function main() {
 
   console.log("✓ Sales data (12 deals, 5 proposal templates)");
 
+  // ---------------- Finance · Consulting Contracts (10 retainers) ----------------
+  // Seed matches design screenshot (Danışmanlıklar tab): 10 firms with Ay Başı / Ay Ortası split
+  const ayBasi = (day: number) => new Date(2026, 3, day, 10, 0); // nisan 2026
+  await prisma.consultingContract.createMany({
+    data: [
+      // ── AY BAŞI (1-10 Nisan) ──
+      {
+        firmId: firm.id, companyName: "Trakya Cam",
+        dueType: "AY_BASI", retainerFee: 85000, sgkFee: 12000,
+        tenureYears: 4, tenureMonths: 2,
+        lastCollectedAt: ayBasi(3), nextDueAt: new Date(2026, 4, 3, 10, 0),
+        status: "AKTIF", isOverdue: false, assigneeName: "Mehmet",
+      },
+      {
+        firmId: firm.id, companyName: "Aksoy İnşaat",
+        dueType: "AY_BASI", retainerFee: 62000, sgkFee: 8500,
+        tenureYears: 2, tenureMonths: 7,
+        lastCollectedAt: ayBasi(5), nextDueAt: new Date(2026, 4, 5, 10, 0),
+        status: "AKTIF", isOverdue: false, assigneeName: "Elif",
+      },
+      {
+        firmId: firm.id, companyName: "Medya Holding",
+        dueType: "AY_BASI", retainerFee: 95000, sgkFee: 14000,
+        tenureYears: 5, tenureMonths: 0,
+        lastCollectedAt: ayBasi(7), nextDueAt: new Date(2026, 4, 7, 10, 0),
+        status: "AKTIF", isOverdue: false, assigneeName: "Mehmet",
+      },
+      {
+        firmId: firm.id, companyName: "BSH Ev Aletleri",
+        dueType: "AY_BASI", retainerFee: 110000, sgkFee: 16500,
+        tenureYears: 6, tenureMonths: 3,
+        lastCollectedAt: ayBasi(8), nextDueAt: new Date(2026, 4, 8, 10, 0),
+        status: "AKTIF", isOverdue: false, assigneeName: "Cem",
+      },
+      {
+        firmId: firm.id, companyName: "Anadolu Sigorta",
+        dueType: "AY_BASI", retainerFee: 72000, sgkFee: 10500,
+        tenureYears: 3, tenureMonths: 4,
+        lastCollectedAt: ayBasi(10), nextDueAt: new Date(2026, 4, 10, 10, 0),
+        status: "AKTIF", isOverdue: false, assigneeName: "Elif",
+      },
+      {
+        firmId: firm.id, companyName: "Koç İnşaat Malz.",
+        dueType: "AY_BASI", retainerFee: 58000, sgkFee: 8000,
+        tenureYears: 1, tenureMonths: 11,
+        lastCollectedAt: ayBasi(10), nextDueAt: new Date(2026, 4, 10, 10, 0),
+        status: "AKTIF", isOverdue: false, assigneeName: "Mehmet",
+      },
+      // ── AY ORTASI (15-25 Nisan) ──
+      {
+        firmId: firm.id, companyName: "Pegasus GYO",
+        dueType: "AY_ORTASI", retainerFee: 78000, sgkFee: 11000,
+        tenureYears: 3, tenureMonths: 8,
+        lastCollectedAt: new Date(2026, 2, 18, 10, 0),
+        nextDueAt: new Date(2026, 3, 18, 10, 0),
+        status: "AKTIF", isOverdue: false, assigneeName: "Cem",
+      },
+      {
+        firmId: firm.id, companyName: "Demir Makine",
+        dueType: "AY_ORTASI", retainerFee: 48000, sgkFee: 6500,
+        tenureYears: 2, tenureMonths: 1,
+        lastCollectedAt: new Date(2026, 2, 20, 10, 0),
+        nextDueAt: new Date(2026, 3, 20, 10, 0),
+        status: "AKTIF", isOverdue: false, assigneeName: "Elif",
+      },
+      {
+        firmId: firm.id, companyName: "Mavi Lojistik",
+        dueType: "AY_ORTASI", retainerFee: 65000, sgkFee: 9000,
+        tenureYears: 2, tenureMonths: 5,
+        lastCollectedAt: new Date(2026, 1, 22, 10, 0),  // Şubat — geciken
+        nextDueAt: new Date(2026, 2, 22, 10, 0),        // Mart — ödenmemiş
+        status: "BEKLEMEDE", isOverdue: true, assigneeName: "Mehmet",
+        notes: "Şubat ödemesi yapıldı, Mart bekliyor — hatırlatma gönderildi.",
+      },
+      {
+        firmId: firm.id, companyName: "Yıldız Teknoloji",
+        dueType: "AY_ORTASI", retainerFee: 92000, sgkFee: 13500,
+        tenureYears: 4, tenureMonths: 9,
+        lastCollectedAt: new Date(2026, 2, 25, 10, 0),
+        nextDueAt: new Date(2026, 3, 25, 10, 0),
+        status: "AKTIF", isOverdue: false, assigneeName: "Cem",
+      },
+    ],
+  });
+
+  console.log("✓ Finance data (10 consulting contracts)");
+
   console.log("✓ Demo data seeded");
   console.log("");
   console.log("Giriş bilgileri:");

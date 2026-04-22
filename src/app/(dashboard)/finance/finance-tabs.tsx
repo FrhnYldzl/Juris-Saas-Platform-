@@ -1,37 +1,34 @@
 "use client";
 
 import Link from "next/link";
-import { cn } from "@/lib/utils";
 
 const TABS = [
-  { key: "ozet", label: "Özet" },
-  { key: "nakit", label: "Nakit" },
-  { key: "gelirgider", label: "Gelir-Gider" },
-  { key: "tahsilat", label: "Tahsilat" },
-  { key: "faturalar", label: "Faturalar" },
+  { key: "nabiz",       label: "Özet & Nabız" },
+  { key: "nakit",       label: "Nakit Akış" },
+  { key: "gelirgider",  label: "Gelir & Gider" },
+  { key: "danismanlik", label: "Danışmanlıklar" },
+  { key: "tahsilat",    label: "Tahsilat & Vade" },
 ] as const;
 
 export function FinanceTabs({ active }: { active: string }) {
   return (
-    <div className="flex gap-1 border-b border-juris-line mb-6 overflow-x-auto -mx-6 px-6 md:mx-0 md:px-0">
+    <div
+      className="inline-flex gap-0.5 rounded-md p-[3px] mb-6"
+      style={{ background: "white", border: "1px solid #E5E9F0" }}
+    >
       {TABS.map((t) => {
         const isActive = t.key === active;
         return (
           <Link
             key={t.key}
-            href={t.key === "ozet" ? "/finance" : `/finance?tab=${t.key}`}
-            className={cn(
-              "relative px-4 py-2.5 text-sm font-semibold whitespace-nowrap transition-colors",
-              isActive ? "text-juris-navy" : "text-juris-ink-3 hover:text-juris-navy",
-            )}
+            href={t.key === "nabiz" ? "/finance" : `/finance?tab=${t.key}`}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-[12px] font-semibold rounded-[4px] transition-all"
+            style={{
+              background: isActive ? "#0A2240" : "transparent",
+              color: isActive ? "white" : "#5A6B82",
+            }}
           >
             {t.label}
-            {isActive && (
-              <span
-                className="absolute inset-x-3 bottom-0 h-[2px] rounded-t"
-                style={{ background: "#BC2F2C" }}
-              />
-            )}
           </Link>
         );
       })}
