@@ -6,46 +6,49 @@ import type { UserRole } from "@prisma/client";
 import { cn } from "@/lib/utils";
 
 const ROLE_META: Record<UserRole, { label: string; short: string; icon: typeof Crown; hint: string }> = {
-  OWNER: { label: "Kurucu Ortak", short: "Ortak", icon: Crown, hint: "Tam yetki" },
-  PARTNER: { label: "Yönetici Ortak", short: "Ortak", icon: Crown, hint: "Neredeyse tam yetki" },
-  ASSOCIATE: { label: "Avukat", short: "Avukat", icon: Briefcase, hint: "Dosya + fatura" },
-  PARALEGAL: { label: "Paralegal", short: "Stajyer", icon: UserCog, hint: "Okuma + belge" },
-  ADMIN_STAFF: { label: "İdari Personel", short: "İdari", icon: Shield, hint: "Finans + ekip" },
-  CLIENT: { label: "Müvekkil", short: "Müvekkil", icon: User, hint: "Sadece kendi dosyaları" },
+  OWNER:       { label: "Kurucu Ortak",    short: "Ortak",    icon: Crown,     hint: "Tam yetki" },
+  PARTNER:     { label: "Yönetici Ortak",  short: "Ortak",    icon: Crown,     hint: "Neredeyse tam yetki" },
+  ASSOCIATE:   { label: "Avukat",           short: "Avukat",   icon: Briefcase, hint: "Dosya + fatura" },
+  PARALEGAL:   { label: "Paralegal",        short: "Stajyer",  icon: UserCog,   hint: "Okuma + belge" },
+  ADMIN_STAFF: { label: "İdari Personel",   short: "İdari",    icon: Shield,    hint: "Finans + ekip" },
+  CLIENT:      { label: "Müvekkil",          short: "Müvekkil", icon: User,      hint: "Sadece kendi dosyaları" },
 };
+
+const PREVIEWABLE_ROLES: UserRole[] = ["ASSOCIATE", "PARALEGAL", "ADMIN_STAFF", "CLIENT"];
 
 /**
  * Topbar role preview switcher (OWNER / PARTNER only).
  *
- * Görsel önizleme — sadece UI'a etki eder, sunucu yetkileri değişmez.
- * Önizleme modundayken `?preview_role=ASSOCIATE` query parametresi gibi
- * bir mekanizma ile RBAC'ı client tarafında kısıtlayabiliriz (v0.9).
- * Şimdilik gerçek rol her yerde geçerli; switcher sadece nav/module
- * görünürlüğünü önizlemek için bir ipucu rozeti gösterir.
+ * Real behavior: POSTs to /api/preview-mode which sets a cookie. The page
+ * then reloads so the server-side layouts pick up the new effective role.
+ * For CLIENT preview, we reload straight to /portal.
  */
-export function RoleSwitcher({
-  currentRole,
-}: {
-  currentRole: UserRole;
-}) {
+export function RoleSwitcher({ currentRole }: { currentRole: UserRole }) {
   const [open, setOpen] = useState(false);
-  const [previewRole, setPreviewRole] = useState<UserRole | null>(null);
+  const [busy, setBusy] = useState(false);
 
   // Only OWNER / PARTNER can use this
   if (currentRole !== "OWNER" && currentRole !== "PARTNER") return null;
 
-  const activeRole = previewRole ?? currentRole;
-  const ActiveIcon = ROLE_META[activeRole].icon;
+  const currentMeta = ROLE_META[currentRole];
+  const CurrentIcon = currentMeta.icon;
 
-  const applyPreview = (role: UserRole | null) => {
-    setPreviewRole(role);
+  const applyPreview = async (role: UserRole) => {
+    if (busy) return;
+    setBusy(true);
     setOpen(false);
-    if (typeof document !== "undefined") {
-      if (role) {
-        document.body.setAttribute("data-preview-role", role);
-      } else {
-        document.body.removeAttribute("data-preview-role");
-      }
+    try {
+      const res = await fetch("/api/preview-mode", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role }),
+      });
+      if (!res.ok) throw new Error("preview post failed");
+      // Full reload — server layouts need to re-read the cookie.
+      // CLIENT preview redirects into /portal; staff previews stay on /command.
+      window.location.href = role === "CLIENT" ? "/portal" : "/command";
+    } catch {
+      setBusy(false);
     }
   };
 
@@ -54,28 +57,20 @@ export function RoleSwitcher({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
+        disabled={busy}
         className={cn(
           "inline-flex items-center gap-1.5 h-8 px-3 rounded-full text-xs font-semibold transition-all",
         )}
-        style={
-          previewRole
-            ? {
-                background: "rgba(188,47,44,0.08)",
-                color: "#BC2F2C",
-                border: "1px solid rgba(188,47,44,0.3)",
-              }
-            : {
-                background: "#BC2F2C",
-                color: "white",
-                border: "1px solid #BC2F2C",
-              }
-        }
-        aria-label="Rol"
+        style={{
+          background: "#BC2F2C",
+          color: "white",
+          border: "1px solid #BC2F2C",
+          opacity: busy ? 0.6 : 1,
+        }}
+        aria-label="Rol önizlemesi"
       >
-        {previewRole ? <Eye size={12} /> : <ActiveIcon size={12} />}
-        <span>
-          {previewRole ? ROLE_META[activeRole].short : ROLE_META[currentRole].short}
-        </span>
+        <CurrentIcon size={12} />
+        <span>{currentMeta.short}</span>
         <ChevronDown
           size={11}
           className={cn("transition-transform opacity-80", open && "rotate-180")}
@@ -84,35 +79,42 @@ export function RoleSwitcher({
 
       {open && (
         <>
-          <div
-            className="fixed inset-0 z-20"
-            onClick={() => setOpen(false)}
-          />
+          <div className="fixed inset-0 z-20" onClick={() => setOpen(false)} />
           <div className="absolute right-0 top-full mt-1 w-72 bg-white rounded-lg shadow-juris-lg border border-juris-line z-30 overflow-hidden">
             <div className="px-4 py-3 border-b border-juris-line-2 bg-juris-paper-2">
-              <div className="label text-[9px]">Rol Önizleme</div>
-              <div className="text-xs text-juris-ink-3 mt-1 leading-relaxed">
-                Sadece kendi görünümünüzü değiştirir; RBAC sunucu tarafında değişmez.
+              <div className="flex items-center gap-1.5 mb-1">
+                <Eye size={11} className="text-juris-red" />
+                <div className="label text-[9px]">Rol Önizleme</div>
+              </div>
+              <div className="text-[11px] text-juris-ink-3 leading-relaxed">
+                Başka bir rol olarak platforma bak. Kapatmak için üstte beliren kırmızı şeritten
+                <strong className="text-juris-navy"> &ldquo;Normal görünüme dön&rdquo;</strong>a tıkla.
               </div>
             </div>
+
             <div className="py-1">
-              <RoleItem
-                role={currentRole}
-                active={previewRole === null}
-                isReal
-                onClick={() => applyPreview(null)}
-              />
+              {/* Real role row — non-clickable */}
+              <div className="w-full flex items-center gap-2.5 px-3 py-2 bg-white">
+                <CurrentIcon size={14} className="text-juris-ink-3" />
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium text-juris-ink-2">
+                    {currentMeta.label}
+                    <span className="ml-1.5 text-[10px] text-juris-ink-4 font-normal">(gerçek rolün)</span>
+                  </div>
+                  <div className="text-[10px] text-juris-ink-4">{currentMeta.hint}</div>
+                </div>
+              </div>
+
               <div className="my-1 h-px bg-juris-line-2 mx-3" />
-              {(Object.keys(ROLE_META) as UserRole[])
-                .filter((r) => r !== currentRole)
-                .map((r) => (
-                  <RoleItem
-                    key={r}
-                    role={r}
-                    active={previewRole === r}
-                    onClick={() => applyPreview(r)}
-                  />
-                ))}
+
+              {PREVIEWABLE_ROLES.map((r) => (
+                <PreviewItem
+                  key={r}
+                  role={r}
+                  onClick={() => applyPreview(r)}
+                  disabled={busy}
+                />
+              ))}
             </div>
           </div>
         </>
@@ -121,34 +123,42 @@ export function RoleSwitcher({
   );
 }
 
-function RoleItem({
-  role, active, isReal, onClick,
+function PreviewItem({
+  role, onClick, disabled,
 }: {
   role: UserRole;
-  active: boolean;
-  isReal?: boolean;
   onClick: () => void;
+  disabled: boolean;
 }) {
   const meta = ROLE_META[role];
   const Icon = meta.icon;
+  const isClient = role === "CLIENT";
   return (
     <button
       type="button"
       onClick={onClick}
+      disabled={disabled}
       className={cn(
         "w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-juris-paper-2 transition-colors",
-        active && "bg-juris-paper-2",
+        disabled && "opacity-50",
       )}
     >
-      <Icon size={14} className={active ? "text-juris-red" : "text-juris-ink-3"} />
+      <Icon size={14} className={isClient ? "text-juris-red" : "text-juris-ink-3"} />
       <div className="flex-1 min-w-0">
-        <div className={cn("text-sm font-medium", active ? "text-juris-navy" : "text-juris-ink-2")}>
+        <div className="text-sm font-medium text-juris-ink-2">
           {meta.label}
-          {isReal && <span className="ml-1.5 text-[10px] text-juris-ink-4 font-normal">(gerçek rolün)</span>}
+          {isClient && (
+            <span
+              className="ml-1.5 inline-flex items-center px-1.5 py-px rounded text-[9px] font-semibold"
+              style={{ background: "rgba(188,47,44,0.1)", color: "#BC2F2C" }}
+            >
+              Portal
+            </span>
+          )}
         </div>
         <div className="text-[10px] text-juris-ink-4">{meta.hint}</div>
       </div>
-      {active && <span className="w-1.5 h-1.5 rounded-full bg-juris-red" />}
+      <span className="text-[10px] text-juris-ink-4 mono">Önizle →</span>
     </button>
   );
 }
