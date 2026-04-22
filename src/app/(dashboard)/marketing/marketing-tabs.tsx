@@ -1,14 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { LayoutGrid, Sparkles, Users } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { LayoutGrid, Calendar, Sparkles, Users } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 const TABS: { key: string; label: string; icon: LucideIcon }[] = [
-  { key: "ozet", label: "Özet", icon: LayoutGrid },
-  { key: "icerik", label: "İçerik Stüdyosu", icon: Sparkles },
-  { key: "trafik", label: "Trafik Stüdyosu", icon: Users },
+  { key: "ozet",   label: "Özet",             icon: LayoutGrid },
+  { key: "plan",   label: "Ay Planı",         icon: Calendar },
+  { key: "icerik", label: "İçerik Stüdyosu",  icon: Sparkles },
+  { key: "trafik", label: "Trafik Stüdyosu",  icon: Users },
 ];
 
 export function MarketingTabs({ active }: { active: string }) {

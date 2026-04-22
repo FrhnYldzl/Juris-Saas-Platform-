@@ -2,7 +2,7 @@ import Link from "next/link";
 import {
   Plus, Calendar, Sparkles, ArrowRight, ExternalLink,
   Globe, Linkedin, Mail, Youtube, FileText, Hash,
-  RotateCw, Send, Wand2,
+  RotateCw, Send, Wand2, GitBranch, CheckCircle2, Clock, Circle,
 } from "lucide-react";
 import type { ContentChannel, ContentStatus, ContentItem } from "@prisma/client";
 import { requireTenant } from "@/lib/tenancy";
@@ -11,10 +11,13 @@ import { Kpi } from "@/components/ui/kpi";
 import { Avatar } from "@/components/ui/avatar";
 import { formatDateTR, formatRelativeTR } from "@/lib/utils";
 import { MarketingTabs } from "./marketing-tabs";
+import { NewContentButton } from "./new-content-button";
+import { startOfMonth, endOfMonth, addDays, isSameDay, format } from "date-fns";
+import { tr } from "date-fns/locale";
 
 export const metadata = { title: "Pazarlama" };
 
-type TabKey = "ozet" | "icerik" | "trafik";
+type TabKey = "ozet" | "plan" | "icerik" | "trafik";
 
 const CHANNEL_META: Record<ContentChannel | "OTHER", { label: string; color: string; icon: typeof Globe }> = {
   BLOG:        { label: "Blog",       color: "#0A2240", icon: Globe },
@@ -101,10 +104,11 @@ export default async function MarketingPage({
             <span className="text-juris-ink-4">·</span>
             <span className="text-juris-ink-3">Drive</span>
           </div>
+          <Link href="/marketing?tab=plan" className="btn btn-ghost">
+            <Calendar size={14} /> Ay Planı
+          </Link>
+          <NewContentButton kind="accent" label="Yeni akış başlat" />
           <button className="btn btn-ghost">
-            <Calendar size={14} /> Takvim
-          </button>
-          <button className="btn btn-accent">
             <Sparkles size={14} /> AI içerik üret
           </button>
         </div>
@@ -116,6 +120,7 @@ export default async function MarketingPage({
       </div>
 
       {tab === "ozet" && <OzetTab items={items} />}
+      {tab === "plan" && <PlanTab items={items} />}
       {tab === "icerik" && <IcerikTab items={items} activeItem={activeItem ?? null} />}
       {tab === "trafik" && <TrafikTab />}
     </div>
@@ -361,9 +366,11 @@ function IcerikTab({
             >
               Yayın Hattı
             </h3>
-            <button className="btn btn-sm btn-ghost">
-              <Plus size={11} /> Ekle
-            </button>
+            <NewContentButton
+              kind="ghost"
+              label="Ekle"
+              className="!px-2 !py-1 !text-[11px]"
+            />
           </div>
           <div className="text-[11px] text-juris-ink-3 mb-4">
             {items.length} içerik · {counts.published} yayında · {counts.review} inceleme · {counts.draft} taslak
@@ -481,6 +488,13 @@ function ArticleEditor({ item }: { item: ContentItem }) {
           </span>
         </div>
         <div className="flex gap-2">
+          <Link
+            href={`/marketing/${item.id}?stage=uret`}
+            className="btn btn-sm"
+            style={{ background: "#0A2240", color: "white", border: "1px solid #0A2240" }}
+          >
+            <GitBranch size={11} /> Tam akış
+          </Link>
           <button className="btn btn-sm btn-ghost">
             <Wand2 size={11} /> AI yeniden yaz
           </button>
@@ -1061,4 +1075,245 @@ function TrafikTab() {
       </div>
     </>
   );
+}
+
+// ============================== PLAN TAB ==============================
+
+function PlanTab({ items }: { items: ContentItem[] }) {
+  const now = new Date();
+  const mStart = startOfMonth(now);
+  const mEnd = endOfMonth(now);
+  const monthLabel = format(now, "LLLL yyyy", { locale: tr });
+
+  const thisMonth = items.filter((i) => {
+    const ref = i.publishAt ?? i.publishedAt ?? i.createdAt;
+    return ref && ref >= mStart && ref <= mEnd;
+  });
+
+  const targets: Array<{ channel: ContentChannel; label: string; icon: typeof Globe; color: string; target: number }> = [
+    { channel: "BLOG",       label: "Blog yazısı",       icon: Globe,    color: "#0A2240", target: 4 },
+    { channel: "LINKEDIN",   label: "LinkedIn post",     icon: Linkedin, color: "#0077B5", target: 8 },
+    { channel: "NEWSLETTER", label: "Newsletter",        icon: Mail,     color: "#1F7A4E", target: 2 },
+    { channel: "INSTAGRAM",  label: "Instagram",         icon: Hash,     color: "#E1306C", target: 4 },
+    { channel: "VIDEO",      label: "Video / Reels",     icon: Youtube,  color: "#BC2F2C", target: 2 },
+  ];
+
+  const progress = targets.map((t) => {
+    const done = thisMonth.filter((i) => i.channel === t.channel && i.status === "PUBLISHED").length;
+    const inFlight = thisMonth.filter((i) => i.channel === t.channel && i.status !== "PUBLISHED" && i.status !== "ARCHIVED").length;
+    return { ...t, done, inFlight, pct: Math.min(100, Math.round((done / Math.max(1, t.target)) * 100)) };
+  });
+
+  const totalTarget = targets.reduce((s, t) => s + t.target, 0);
+  const totalDone   = progress.reduce((s, p) => s + p.done, 0);
+  const totalFlight = progress.reduce((s, p) => s + p.inFlight, 0);
+  const totalIdea   = Math.max(0, totalTarget - totalDone - totalFlight);
+  const overallPct  = Math.min(100, Math.round((totalDone / Math.max(1, totalTarget)) * 100));
+
+  const daysInMonth = Math.round((mEnd.getTime() - mStart.getTime()) / 86400000) + 1;
+  const days = Array.from({ length: daysInMonth }, (_, i) => addDays(mStart, i));
+  const byDay = new Map<string, ContentItem[]>();
+  for (const it of thisMonth) {
+    const ref = it.publishAt ?? it.publishedAt;
+    if (!ref) continue;
+    const k = format(ref, "yyyy-MM-dd");
+    const arr = byDay.get(k) ?? [];
+    arr.push(it);
+    byDay.set(k, arr);
+  }
+
+  return (
+    <>
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-7">
+        <Kpi label="Ay Hedefi"   value={totalTarget} sub={monthLabel} emphasized />
+        <Kpi label="Yayında"      value={totalDone}   sub="tamamlandı"       href="/marketing?tab=icerik" />
+        <Kpi label="Akışta"       value={totalFlight} sub="taslak+inceleme"  href="/marketing?tab=icerik" />
+        <Kpi label="Boşta"         value={totalIdea}   sub="planlanacak" />
+        <Kpi label="İlerleme"     value={`%${overallPct}`} progress={overallPct} sub={`${totalDone}/${totalTarget}`} />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-5">
+        <div className="card p-6">
+          <div className="flex items-start justify-between gap-4 mb-5">
+            <div>
+              <h3
+                className="leading-tight"
+                style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 22, color: "#0A2240" }}
+              >
+                {monthLabel} hedefleri
+              </h3>
+              <p className="text-[12px] text-juris-ink-3 mt-1">
+                Kanal başına hedef · yayımlanan · akıştaki içerikler
+              </p>
+            </div>
+            <NewContentButton kind="accent" label="Yeni akış başlat" />
+          </div>
+
+          <ul className="flex flex-col gap-4">
+            {progress.map((p) => {
+              const Icon = p.icon;
+              return (
+                <li key={p.channel}>
+                  <div className="flex items-center gap-3 mb-1.5">
+                    <div
+                      className="w-8 h-8 rounded-md flex items-center justify-center shrink-0"
+                      style={{ background: `${p.color}15`, color: p.color }}
+                    >
+                      <Icon size={13} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[13px] font-semibold text-juris-navy">{p.label}</div>
+                      <div className="text-[10.5px] text-juris-ink-4">
+                        {p.done} yayında · {p.inFlight} akışta · hedef {p.target}
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="mono text-[13px] font-semibold text-juris-navy">
+                        {p.done}/{p.target}
+                      </div>
+                      <div className="text-[10px] text-juris-ink-4">%{p.pct}</div>
+                    </div>
+                  </div>
+                  <div
+                    className="h-1.5 rounded-full overflow-hidden ml-11"
+                    style={{ background: "#EEF1F5" }}
+                  >
+                    <div
+                      style={{
+                        width: `${p.pct}%`,
+                        height: "100%",
+                        background: p.color,
+                        transition: "width 400ms ease",
+                      }}
+                    />
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+
+          <div
+            className="mt-6 rounded-md p-3 text-[11.5px] text-juris-ink-2 leading-relaxed flex items-start gap-2"
+            style={{ background: "#FAFBFD", border: "1px solid #EEF1F5" }}
+          >
+            <Sparkles size={12} className="text-juris-red shrink-0 mt-0.5" />
+            <span>
+              Hedeflere ulaşmak için öneri:{" "}
+              <strong className="text-juris-navy">haftada 1 blog + 2 LinkedIn</strong>. Blog başlığı Salı;
+              LinkedIn postu Salı-Çarşamba sabah; Newsletter ayın 1 ve 15.
+            </span>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-4">
+          <div className="card p-5">
+            <h4 className="label mb-3">Bu Ay Akıştakiler ({totalFlight})</h4>
+            {thisMonth.filter((i) => i.status !== "PUBLISHED" && i.status !== "ARCHIVED").length === 0 ? (
+              <div className="text-[12px] text-juris-ink-4 italic py-3">
+                Aktif akış yok — yeni akış başlat.
+              </div>
+            ) : (
+              <ul className="flex flex-col divide-y divide-juris-line-2">
+                {thisMonth
+                  .filter((i) => i.status !== "PUBLISHED" && i.status !== "ARCHIVED")
+                  .slice(0, 6)
+                  .map((i) => {
+                    const stage = i.status === "REVIEW" ? "onay" : i.status === "SCHEDULED" ? "yayim" : "uret";
+                    return (
+                      <li key={i.id}>
+                        <Link
+                          href={`/marketing/${i.id}?stage=${stage}`}
+                          className="py-2.5 flex items-start gap-2 hover:bg-juris-paper-2 -mx-2 px-2 rounded transition-colors"
+                        >
+                          <StageIcon status={i.status} />
+                          <div className="flex-1 min-w-0">
+                            <div className="text-[12.5px] font-semibold text-juris-navy truncate">{i.title}</div>
+                            <div className="text-[10.5px] text-juris-ink-4 mt-0.5">
+                              {STATUS_META[i.status].label}
+                              {i.publishAt && ` · ${formatDateTR(i.publishAt)}`}
+                            </div>
+                          </div>
+                          <ArrowRight size={11} className="text-juris-ink-4 mt-1 shrink-0" />
+                        </Link>
+                      </li>
+                    );
+                  })}
+              </ul>
+            )}
+          </div>
+
+          <div className="card p-5">
+            <h4 className="label mb-3">Ay Takvimi</h4>
+            <div className="grid grid-cols-7 gap-1 text-[10px] text-juris-ink-4 uppercase font-semibold">
+              {["Pt", "Sa", "Ça", "Pe", "Cu", "Ct", "Pa"].map((d) => (
+                <div key={d} className="text-center py-1">{d}</div>
+              ))}
+              {(() => {
+                const firstDay = ((mStart.getDay() + 6) % 7);
+                return Array.from({ length: firstDay }, (_, i) => <div key={`blank-${i}`} />);
+              })()}
+              {days.map((d) => {
+                const k = format(d, "yyyy-MM-dd");
+                const its = byDay.get(k) ?? [];
+                const isToday = isSameDay(d, now);
+                const published = its.some((i) => i.status === "PUBLISHED");
+                const planned   = its.some((i) => i.status === "SCHEDULED");
+                const inFlight  = its.some((i) => i.status === "DRAFT" || i.status === "REVIEW");
+                return (
+                  <div
+                    key={k}
+                    className="aspect-square rounded text-[10px] flex items-center justify-center relative"
+                    style={{
+                      background:
+                        published ? "#1F7A4E" :
+                        planned   ? "rgba(10,34,64,0.12)" :
+                        inFlight  ? "rgba(180,112,28,0.1)" :
+                                    isToday ? "rgba(188,47,44,0.08)" : "#FAFBFD",
+                      color: published ? "white" : isToday ? "#BC2F2C" : "#5A6B82",
+                      border: isToday ? "1px solid #BC2F2C" : "1px solid transparent",
+                      fontWeight: isToday ? 700 : 500,
+                    }}
+                    title={its.length > 0 ? its.map((i) => i.title).join("\n") : ""}
+                  >
+                    {d.getDate()}
+                    {its.length > 0 && (
+                      <span
+                        className="absolute bottom-0.5 right-0.5 w-1 h-1 rounded-full"
+                        style={{ background: published ? "white" : "#BC2F2C" }}
+                      />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            <div className="mt-3 flex items-center gap-3 text-[9.5px] text-juris-ink-4 flex-wrap">
+              <span className="inline-flex items-center gap-1">
+                <span className="w-2 h-2 rounded-sm" style={{ background: "#1F7A4E" }} />
+                Yayında
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <span className="w-2 h-2 rounded-sm" style={{ background: "rgba(10,34,64,0.12)" }} />
+                Planlı
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <span className="w-2 h-2 rounded-sm" style={{ background: "rgba(180,112,28,0.1)" }} />
+                Akışta
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <span className="w-2 h-2 rounded-sm" style={{ border: "1px solid #BC2F2C", background: "rgba(188,47,44,0.08)" }} />
+                Bugün
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function StageIcon({ status }: { status: ContentStatus }) {
+  if (status === "REVIEW")    return <Clock size={11} className="text-juris-warn shrink-0 mt-1" />;
+  if (status === "SCHEDULED") return <Calendar size={11} className="text-juris-navy shrink-0 mt-1" />;
+  if (status === "PUBLISHED") return <CheckCircle2 size={11} className="text-juris-success shrink-0 mt-1" />;
+  return <Circle size={11} className="text-juris-ink-4 shrink-0 mt-1" />;
 }
