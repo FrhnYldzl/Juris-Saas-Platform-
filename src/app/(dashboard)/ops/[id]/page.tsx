@@ -1,9 +1,10 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ChevronLeft, Pencil } from "lucide-react";
+import { Pencil, Receipt, Calendar as CalendarIcon, FileText as FileTextIcon } from "lucide-react";
 import { requireTenant } from "@/lib/tenancy";
 import { prisma } from "@/lib/prisma";
 import { SectionHead } from "@/components/ui/section-head";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { matterStatusChip, matterTypeLabel } from "@/lib/labels";
 import { formatDateTR, formatTRY } from "@/lib/utils";
 import { TimeEntryPanel } from "./time-entry-panel";
@@ -77,14 +78,21 @@ export default async function MatterDetailPage({
   const totalHours = matter.timeEntries.reduce((s, t) => s + t.durationMin, 0) / 60;
   const openTasks = matter.tasks.filter((t) => t.status !== "DONE" && t.status !== "CANCELLED").length;
 
+  const invoiceCount = matter.invoices.length;
+  const eventCount   = matter.events.length;
+  const docCount     = matter.documents.length;
+
   return (
     <div className="px-6 py-8 max-w-[1240px] mx-auto">
-      <Link
-        href="/ops"
-        className="inline-flex items-center gap-1 text-xs text-juris-ink-3 hover:text-juris-navy mb-4"
-      >
-        <ChevronLeft size={14} /> Dosyalar
-      </Link>
+      <div className="mb-4">
+        <Breadcrumb
+          crumbs={[
+            { label: "Operasyonlar", href: "/ops" },
+            { label: matterTypeLabel(matter.type), href: `/ops?tab=${matter.type === "CONSULTING" ? "danismanlik" : "uyusmazlik"}` },
+            { label: matter.matterNumber },
+          ]}
+        />
+      </div>
 
       <div className="flex items-start gap-3 mb-6">
         <div className="flex-1 min-w-0">
@@ -113,6 +121,45 @@ export default async function MatterDetailPage({
             <Pencil size={14} /> Düzenle
           </Link>
         </div>
+      </div>
+
+      {/* Cross-module quick links */}
+      <div className="mb-6 flex flex-wrap gap-2">
+        <RelatedLink
+          href={`/finance?matter=${matter.id}`}
+          icon={<Receipt size={11} />}
+          label="Faturalar"
+          count={invoiceCount}
+          tone="green"
+        />
+        <RelatedLink
+          href="/finance"
+          icon={<Receipt size={11} />}
+          label={`₺${formatTRY(totalBilled, { short: true }).replace("₺", "").trim()} kesildi`}
+          tone="navy"
+        />
+        <RelatedLink
+          href={`/ops/${matter.id}#events`}
+          icon={<CalendarIcon size={11} />}
+          label="Takvim"
+          count={eventCount}
+          tone="amber"
+        />
+        <RelatedLink
+          href={`/ops/${matter.id}#documents`}
+          icon={<FileTextIcon size={11} />}
+          label="Belgeler"
+          count={docCount}
+          tone="blue"
+        />
+        {matter.client && (
+          <RelatedLink
+            href={`/sales/${matter.client.id}`}
+            icon={<Pencil size={11} />}
+            label={`Müvekkil: ${matter.client.type === "COMPANY" ? matter.client.companyName ?? matter.client.name : matter.client.name}`}
+            tone="red"
+          />
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -324,5 +371,45 @@ export default async function MatterDetailPage({
         </div>
       </div>
     </div>
+  );
+}
+
+// ── Cross-module quick link pill ──
+function RelatedLink({
+  href, icon, label, count, tone,
+}: {
+  href: string;
+  icon: React.ReactNode;
+  label: string;
+  count?: number;
+  tone: "green" | "red" | "amber" | "blue" | "navy";
+}) {
+  const color = {
+    green: "#1F7A4E",
+    red:   "#BC2F2C",
+    amber: "#B4701C",
+    blue:  "#1F5AA8",
+    navy:  "#0A2240",
+  }[tone];
+  return (
+    <Link
+      href={href}
+      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11.5px] font-semibold transition-all hover:shadow-sm bg-white"
+      style={{
+        border: `1px solid ${color}33`,
+        color,
+      }}
+    >
+      {icon}
+      {label}
+      {count !== undefined && (
+        <span
+          className="inline-flex items-center justify-center min-w-[18px] h-[16px] rounded-full text-[9.5px] font-bold text-white px-1"
+          style={{ background: color }}
+        >
+          {count}
+        </span>
+      )}
+    </Link>
   );
 }

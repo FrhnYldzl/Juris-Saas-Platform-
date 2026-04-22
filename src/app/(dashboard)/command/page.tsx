@@ -362,6 +362,7 @@ function FocusModeContent({
       {/* 7-KPI strip — design doc spec */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 mb-8">
         <Kpi
+          href="/sales"
           label="Pipeline"
           value={formatTRY(pipelineTotal, { short: true })}
           delta={pipelineDelta !== 0 ? `+${Math.round(Math.abs(pipelineDelta))}%` : undefined}
@@ -370,6 +371,7 @@ function FocusModeContent({
           emphasized
         />
         <Kpi
+          href="/ops"
           label="Aktif Dosya"
           value={activeMatters}
           delta={`+${Math.max(0, Math.floor(activeMatters * 0.05))}`}
@@ -377,22 +379,26 @@ function FocusModeContent({
           sub="bu ay"
         />
         <Kpi
+          href="/finance"
           label="Tahsilat"
           value={formatTRY(invoiced, { short: true })}
           progress={84}
           secondary={overdueInv > 0 ? `${formatTRY(overdueInv, { short: true })} vadesi geçmiş` : undefined}
         />
         <Kpi
+          href="/finance?tab=tahsilat"
           label="Vadesi Geçmiş"
           value={formatTRY(overdueInv, { short: true })}
           sub={`${overdueCount} müvekkil`}
         />
         <Kpi
+          href="/sales?view=huni"
           label="Kazanma Oranı"
           value="28%"
           sub="hedef 35%"
         />
         <Kpi
+          href="/marketing?tab=trafik"
           label="SEO Trafik"
           value="52.6K"
           delta="+28%"
@@ -400,6 +406,7 @@ function FocusModeContent({
           sub="ay"
         />
         <Kpi
+          href="/ops?tab=danismanlik"
           label="Aktif Danışmanlık"
           value={14}
           sub="sözleşmeli"

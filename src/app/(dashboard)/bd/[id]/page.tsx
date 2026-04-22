@@ -1,9 +1,10 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ChevronLeft, Pencil, Trophy } from "lucide-react";
+import { Pencil, Trophy } from "lucide-react";
 import { requireTenant } from "@/lib/tenancy";
 import { prisma } from "@/lib/prisma";
 import { SectionHead } from "@/components/ui/section-head";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { leadStageLabel } from "@/lib/labels";
 import { formatDateTR, formatTRY } from "@/lib/utils";
 import { ConvertButton } from "./convert-button";
@@ -37,12 +38,15 @@ export default async function LeadDetailPage({
 
   return (
     <div className="px-6 py-8 max-w-[1100px] mx-auto">
-      <Link
-        href="/bd"
-        className="inline-flex items-center gap-1 text-xs text-juris-ink-3 hover:text-juris-navy mb-4"
-      >
-        <ChevronLeft size={14} /> Fırsatlar
-      </Link>
+      <div className="mb-4">
+        <Breadcrumb
+          crumbs={[
+            { label: "Satış",     href: "/sales" },
+            { label: "Pipeline",  href: "/sales" },
+            { label: lead.title },
+          ]}
+        />
+      </div>
 
       <div className="flex items-start justify-between gap-3 mb-6">
         <div className="flex-1 min-w-0">

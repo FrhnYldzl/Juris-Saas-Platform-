@@ -129,6 +129,12 @@ function OzetView({
   advisor: { name: string; title: string | null; email: string; phone: string | null } | null;
   managingPartner: { name: string; title: string | null } | null;
 }) {
+  // Map real matters to the design's three date cards if data exists
+  const hearingMatter = matters.find((m) => m.nextHearingAt);
+  const firstActiveMatter = matters[0];
+  const secondActiveMatter = matters[1];
+  // Fallback matter id to deep-link to Hukuk Operasyonları view when nothing else
+  const fallbackHukukHref = "/portal?view=hukuk";
   const today = new Date();
   const todayLabel = format(today, "d MMMM EEEE", { locale: tr }).toUpperCase();
 
@@ -195,13 +201,15 @@ function OzetView({
 
         <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_260px] gap-3">
           <DateCard
+            href={hearingMatter ? `/portal/matters/${hearingMatter.id}` : fallbackHukukHref}
             badge="SAAT"
             day="10"
             accent="#0A2240"
-            title="2026/412 · İst. 6. Asliye Ticaret"
+            title={hearingMatter ? `${hearingMatter.matterNumber} · ${hearingMatter.title.slice(0, 40)}` : "2026/412 · İst. 6. Asliye Ticaret"}
             detail="10.04.2026 Saat 10:00 · İstanbul 6. Asliye Ticaret Mahkemesi"
           />
           <DateCard
+            href={firstActiveMatter ? `/portal/matters/${firstActiveMatter.id}` : fallbackHukukHref}
             badge="RAPOR"
             day="22"
             accent="#B4701C"
@@ -209,6 +217,7 @@ function OzetView({
             detail="Bilirkişi rapor teslim tarihi: 22.04.2026 · Ankara 3. İdare Mahkemesi"
           />
           <DateCard
+            href={secondActiveMatter ? `/portal/matters/${secondActiveMatter.id}` : fallbackHukukHref}
             badge="DURUŞMA"
             day="—"
             accent="transparent"
@@ -327,29 +336,44 @@ function OzetView({
           className="rounded-xl bg-white overflow-hidden"
           style={{ border: "1px solid #E5E9F0" }}
         >
-          <TaskRow
-            label="Delil klasörü – teslim edilecek ek belgeler"
-            due="09.04.2026"
-            priority="high"
-          />
-          <TaskRow
-            label="Tanık hazırlığı – Operasyon müdürü"
-            due="09.04.2026"
-          />
-          <TaskRow
-            label="Teknik ofis – ek kroki gerekli"
-            due="15.04.2026"
-            priority="high"
-          />
-          <TaskRow
-            label="KVKK aydınlatma metni güncelleme – onayınız bekleniyor"
-            due="15.04.2026"
-          />
-          <TaskRow
-            label="Çalışan eğitimi organizasyonu – tarih belirleyin"
-            due="12.04.2026"
-            isLast
-          />
+          {(() => {
+            // Link each task to the most relevant matter; fallback to Hukuk view
+            const hukukHref = (m?: { id: string }) => m ? `/portal/matters/${m.id}` : "/portal?view=hukuk";
+            const disputeMatter = matters.find((m) => m.type !== "CONSULTING");
+            const consultingMatter = matters.find((m) => m.type === "CONSULTING");
+            return (
+              <>
+                <TaskRow
+                  label="Delil klasörü – teslim edilecek ek belgeler"
+                  due="09.04.2026"
+                  priority="high"
+                  href={hukukHref(disputeMatter)}
+                />
+                <TaskRow
+                  label="Tanık hazırlığı – Operasyon müdürü"
+                  due="09.04.2026"
+                  href={hukukHref(disputeMatter)}
+                />
+                <TaskRow
+                  label="Teknik ofis – ek kroki gerekli"
+                  due="15.04.2026"
+                  priority="high"
+                  href={hukukHref(disputeMatter)}
+                />
+                <TaskRow
+                  label="KVKK aydınlatma metni güncelleme – onayınız bekleniyor"
+                  due="15.04.2026"
+                  href={hukukHref(consultingMatter)}
+                />
+                <TaskRow
+                  label="Çalışan eğitimi organizasyonu – tarih belirleyin"
+                  due="12.04.2026"
+                  isLast
+                  href={hukukHref(consultingMatter)}
+                />
+              </>
+            );
+          })()}
         </div>
       </section>
 
@@ -433,19 +457,17 @@ function PortalKpi({
 }
 
 function DateCard({
-  badge, day, accent, title, detail,
+  badge, day, accent, title, detail, href,
 }: {
   badge: string;
   day: string;
   accent: string;
   title: string;
   detail: string;
+  href?: string;
 }) {
-  return (
-    <div
-      className="rounded-xl p-4 bg-white flex flex-col gap-2 relative overflow-hidden cursor-pointer hover:shadow-sm transition-shadow"
-      style={{ border: `1px solid ${accent === "transparent" ? "#E5E9F0" : accent}` }}
-    >
+  const body = (
+    <>
       {accent !== "transparent" && (
         <div
           aria-hidden
@@ -475,18 +497,27 @@ function DateCard({
           {detail}
         </div>
       </div>
-      <ArrowRight size={12} className="absolute right-3 top-1/2 -translate-y-1/2 text-juris-ink-4" />
-    </div>
+      <ArrowRight size={12} className="absolute right-3 top-1/2 -translate-y-1/2 text-juris-ink-4 transition-transform group-hover:translate-x-0.5" />
+    </>
   );
+
+  const classes = "rounded-xl p-4 bg-white flex flex-col gap-2 relative overflow-hidden cursor-pointer hover:shadow-sm transition-shadow group";
+  const style = { border: `1px solid ${accent === "transparent" ? "#E5E9F0" : accent}` };
+
+  if (href) {
+    return <Link href={href} className={classes} style={style}>{body}</Link>;
+  }
+  return <div className={classes} style={style}>{body}</div>;
 }
 
 function TaskRow({
-  label, due, priority, isLast,
+  label, due, priority, isLast, href,
 }: {
   label: string;
   due: string;
   priority?: "high";
   isLast?: boolean;
+  href?: string;
 }) {
   return (
     <div
@@ -514,13 +545,23 @@ function TaskRow({
           )}
         </div>
       </div>
-      <button
-        type="button"
-        className="inline-flex items-center px-3 py-1.5 rounded-md text-[10.5px] font-semibold text-juris-ink-2 transition-colors hover:bg-juris-paper-2"
-        style={{ border: "1px solid #E5E9F0" }}
-      >
-        Aç
-      </button>
+      {href ? (
+        <Link
+          href={href}
+          className="inline-flex items-center px-3 py-1.5 rounded-md text-[10.5px] font-semibold text-juris-ink-2 transition-colors hover:bg-juris-paper-2"
+          style={{ border: "1px solid #E5E9F0" }}
+        >
+          Aç
+        </Link>
+      ) : (
+        <button
+          type="button"
+          className="inline-flex items-center px-3 py-1.5 rounded-md text-[10.5px] font-semibold text-juris-ink-2 transition-colors hover:bg-juris-paper-2"
+          style={{ border: "1px solid #E5E9F0" }}
+        >
+          Aç
+        </button>
+      )}
     </div>
   );
 }

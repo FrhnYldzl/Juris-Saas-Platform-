@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 interface KpiProps {
@@ -12,21 +13,16 @@ interface KpiProps {
   progress?: number;
   /** Optional red accent for secondary metric (e.g. 'vadesi geçmiş') */
   secondary?: string;
+  /** When set, wraps the card in a Next.js Link — the whole KPI becomes clickable */
+  href?: string;
 }
 
 export function Kpi({
   label, value, delta, trend, sub, suffix,
-  emphasized, progress, secondary,
+  emphasized, progress, secondary, href,
 }: KpiProps) {
-  return (
-    <div
-      className={cn(
-        "rounded-md px-5 py-[18px] flex flex-col gap-1.5 min-h-[110px]",
-        emphasized
-          ? "bg-juris-navy text-white border-0"
-          : "bg-white text-juris-navy border border-juris-line",
-      )}
-    >
+  const body = (
+    <>
       <div
         className={cn(
           "text-[10px] uppercase tracking-wider font-semibold",
@@ -95,6 +91,24 @@ export function Kpi({
           )}
         </div>
       )}
-    </div>
+    </>
   );
+
+  const baseClasses = cn(
+    "rounded-md px-5 py-[18px] flex flex-col gap-1.5 min-h-[110px] transition-shadow",
+    emphasized
+      ? "bg-juris-navy text-white border-0"
+      : "bg-white text-juris-navy border border-juris-line",
+    href && "hover:shadow-sm cursor-pointer group",
+  );
+
+  if (href) {
+    return (
+      <Link href={href} className={baseClasses}>
+        {body}
+      </Link>
+    );
+  }
+
+  return <div className={baseClasses}>{body}</div>;
 }

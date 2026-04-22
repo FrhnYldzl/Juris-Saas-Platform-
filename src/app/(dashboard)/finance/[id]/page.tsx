@@ -1,9 +1,10 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ChevronLeft, Download } from "lucide-react";
+import { Download } from "lucide-react";
 import { requireTenant } from "@/lib/tenancy";
 import { prisma } from "@/lib/prisma";
 import { SectionHead } from "@/components/ui/section-head";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { invoiceStatusChip } from "@/lib/labels";
 import { formatDateTR, formatTRY } from "@/lib/utils";
 import { InvoiceActions } from "./invoice-actions";
@@ -36,12 +37,15 @@ export default async function InvoiceDetailPage({
 
   return (
     <div className="px-6 py-8 max-w-[1100px] mx-auto">
-      <Link
-        href="/finance"
-        className="inline-flex items-center gap-1 text-xs text-juris-ink-3 hover:text-juris-navy mb-4"
-      >
-        <ChevronLeft size={14} /> Faturalar
-      </Link>
+      <div className="mb-4">
+        <Breadcrumb
+          crumbs={[
+            { label: "Finans",     href: "/finance" },
+            { label: "Faturalar",  href: "/finance?tab=tahsilat" },
+            { label: invoice.invoiceNumber },
+          ]}
+        />
+      </div>
 
       <div className="flex items-start justify-between gap-3 mb-6">
         <div className="flex-1 min-w-0">

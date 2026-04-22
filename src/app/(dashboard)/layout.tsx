@@ -3,6 +3,7 @@ import { Sidebar } from "@/components/shell/sidebar";
 import { Topbar } from "@/components/shell/topbar";
 import { AIChatWidget } from "@/components/ai/chat-widget";
 import { TweaksPanel } from "@/components/shell/tweaks-panel";
+import { CommandPalette } from "@/components/shell/command-palette";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { can } from "@/lib/rbac";
@@ -57,6 +58,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       </div>
       {aiEnabled && <AIChatWidget providers={providers} />}
       <TweaksPanel />
+      <CommandPalette />
     </div>
   );
 }

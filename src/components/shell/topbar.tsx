@@ -50,9 +50,17 @@ export function Topbar({ user }: TopbarProps) {
         <button
           type="button"
           aria-label="Komut paleti (⌘K)"
-          className="p-[7px] rounded-[5px] text-juris-ink-3 hover:bg-juris-navy-100 hover:text-juris-navy transition-colors"
+          title="Komut paleti · ⌘K"
+          onClick={() => {
+            // Fire the same keyboard shortcut that CommandPalette listens for
+            window.dispatchEvent(
+              new KeyboardEvent("keydown", { key: "k", metaKey: true, ctrlKey: true }),
+            );
+          }}
+          className="inline-flex items-center gap-1.5 px-2 h-8 rounded-[5px] text-juris-ink-3 hover:bg-juris-navy-100 hover:text-juris-navy transition-colors"
         >
-          <Command size={15} />
+          <Command size={13} />
+          <span className="hidden md:inline text-[10px] mono font-semibold">⌘K</span>
         </button>
         <NotificationCenter />
         <RoleSwitcher currentRole={user.role} />
