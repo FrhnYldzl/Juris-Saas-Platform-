@@ -3,15 +3,16 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
-export type SettingsTabKey = "firma" | "markalasma" | "bildirimler" | "abonelik" | "denetim" | "veri";
+export type SettingsTabKey = "firma" | "markalasma" | "bildirimler" | "abonelik" | "api" | "denetim" | "veri";
 
 const TABS: Array<{ key: SettingsTabKey; label: string; href: string }> = [
-  { key: "firma",        label: "Firma",        href: "/settings" },
-  { key: "markalasma",   label: "Markalaşma",   href: "/settings?tab=markalasma" },
-  { key: "bildirimler",  label: "Bildirimler",  href: "/settings?tab=bildirimler" },
-  { key: "abonelik",     label: "Abonelik",     href: "/settings/billing" },
-  { key: "denetim",      label: "Denetim",      href: "/settings/audit" },
-  { key: "veri",         label: "Veri & KVKK",  href: "/settings?tab=veri" },
+  { key: "firma",        label: "Firma",            href: "/settings" },
+  { key: "markalasma",   label: "Markalaşma",       href: "/settings?tab=markalasma" },
+  { key: "bildirimler",  label: "Bildirimler",      href: "/settings?tab=bildirimler" },
+  { key: "abonelik",     label: "Abonelik",         href: "/settings/billing" },
+  { key: "api",          label: "API & Anahtarlar", href: "/settings/api" },
+  { key: "denetim",      label: "Denetim",          href: "/settings/audit" },
+  { key: "veri",         label: "Veri & KVKK",      href: "/settings?tab=veri" },
 ];
 
 export function SettingsTabs({ active }: { active: SettingsTabKey }) {

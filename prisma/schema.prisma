@@ -48,6 +48,7 @@ model Firm {
   proposalTemplates ProposalTemplate[]
   consultingContracts ConsultingContract[]
   campaigns        Campaign[]
+  apiKeys          ApiKey[]
 
   @@map("firms")
 }
@@ -820,10 +821,32 @@ model AuditLog {
   @@map("audit_logs")
 }
 
+// ---------------- API Keys (Paperclip & generic public API) ----------------
+
+model ApiKey {
+  id           String    @id @default(cuid())
+  firmId       String    @map("firm_id")
+  name         String                                          // "Paperclip Production"
+  prefix       String                                          // first 8 chars shown for identification
+  keyHash      String    @unique @map("key_hash")              // SHA-256 hex of the full key
+  scopes       String[]  @default([])                          // ["lead:read", "content:draft", ...]
+  service      String?                                         // "paperclip" | "custom"
+  lastUsedAt   DateTime? @map("last_used_at")
+  lastUsedIp   String?   @map("last_used_ip")
+  expiresAt    DateTime? @map("expires_at")
+  revokedAt    DateTime? @map("revoked_at")
+  createdById  String?   @map("created_by_id")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  firm Firm @relation(fields: [firmId], references: [id], onDelete: Cascade)
+
+  @@index([firmId])
+  @@index([keyHash])
+  @@map("api_keys")
+}
+
 // ---------------- Sales & Marketing · UTM Campaigns ----------------
-// Registered via Paperclip API (POST /api/paperclip/campaigns) so external
-// S&M tools can create UTM campaigns; each lead can later be attributed
-// back via Lead.source matching utm_campaign.
 
 model Campaign {
   id           String    @id @default(cuid())

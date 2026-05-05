@@ -67,6 +67,7 @@ const TAB_LABELS: Record<SettingsTabKey, string> = {
   markalasma:  "Markalaşma",
   bildirimler: "Bildirim Kuralları",
   abonelik:    "Abonelik & Faturalama",
+  api:         "API & Anahtarlar",
   denetim:     "Denetim İzi",
   veri:        "Veri & KVKK",
 };

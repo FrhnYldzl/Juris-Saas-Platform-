@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { timingSafeEqual } from "node:crypto";
+import { timingSafeEqual, createHash } from "node:crypto";
 import { prisma } from "./prisma";
 import { audit } from "./audit";
 
@@ -56,15 +56,6 @@ type AuthResult =
  */
 export async function authenticatePaperclip(req: Request): Promise<AuthResult> {
   const provided = req.headers.get("x-api-key") ?? "";
-  const expected = process.env.JURIS_SM_KEY ?? "";
-
-  if (!expected) {
-    console.error("paperclip: JURIS_SM_KEY not set on the server");
-    return {
-      ok: false,
-      response: paperclipError(500, "server_misconfigured", "API not enabled — JURIS_SM_KEY missing"),
-    };
-  }
 
   if (!provided) {
     return {
@@ -73,37 +64,85 @@ export async function authenticatePaperclip(req: Request): Promise<AuthResult> {
     };
   }
 
-  if (!constantTimeEqual(provided, expected)) {
+  // 1) Try DB-stored key first (preferred). Hash incoming key, look up by hash.
+  const incomingHash = sha256Hex(provided);
+  const dbKey = await prisma.apiKey.findFirst({
+    where: { keyHash: incomingHash },
+    select: {
+      id: true, firmId: true, name: true, scopes: true, service: true,
+      revokedAt: true, expiresAt: true,
+    },
+  });
+
+  if (dbKey) {
+    if (dbKey.revokedAt) {
+      return {
+        ok: false,
+        response: paperclipError(401, "key_revoked", "API key has been revoked"),
+      };
+    }
+    if (dbKey.expiresAt && dbKey.expiresAt < new Date()) {
+      return {
+        ok: false,
+        response: paperclipError(401, "key_expired", "API key has expired"),
+      };
+    }
+
+    // Update last-used metadata (fire-and-forget)
+    const ip = (req.headers.get("x-forwarded-for") ?? "").split(",")[0]?.trim() || null;
+    prisma.apiKey
+      .update({
+        where: { id: dbKey.id },
+        data: { lastUsedAt: new Date(), lastUsedIp: ip ?? undefined },
+      })
+      .catch((err) => console.error("apiKey.update failed:", err));
+
+    const scopes = (dbKey.scopes.length > 0
+      ? dbKey.scopes
+      : ALLOWED_SCOPES) as readonly PaperclipScope[];
+
     return {
-      ok: false,
-      response: paperclipError(401, "invalid_api_key", "X-API-Key did not match"),
+      ok: true,
+      ctx: { firmId: dbKey.firmId, apiKeyName: dbKey.name, scopes },
     };
   }
 
-  // Tenancy
-  let firmId = process.env.JURIS_SM_FIRM_ID ?? null;
-  if (!firmId) {
-    const firm = await prisma.firm.findFirst({
-      orderBy: { createdAt: "asc" },
-      select: { id: true },
-    });
-    firmId = firm?.id ?? null;
-  }
-  if (!firmId) {
+  // 2) Env-var fallback (bootstrap key — same value across deploys)
+  const envKey = process.env.JURIS_SM_KEY ?? "";
+  if (envKey && constantTimeEqual(provided, envKey)) {
+    let firmId = process.env.JURIS_SM_FIRM_ID ?? null;
+    if (!firmId) {
+      const firm = await prisma.firm.findFirst({
+        orderBy: { createdAt: "asc" },
+        select: { id: true },
+      });
+      firmId = firm?.id ?? null;
+    }
+    if (!firmId) {
+      return {
+        ok: false,
+        response: paperclipError(500, "no_tenant", "No firm configured for the API key"),
+      };
+    }
     return {
-      ok: false,
-      response: paperclipError(500, "no_tenant", "No firm configured for the API key"),
+      ok: true,
+      ctx: {
+        firmId,
+        apiKeyName: process.env.JURIS_SM_KEY_NAME ?? "paperclip-sm-env",
+        scopes: ALLOWED_SCOPES,
+      },
     };
   }
 
   return {
-    ok: true,
-    ctx: {
-      firmId,
-      apiKeyName: process.env.JURIS_SM_KEY_NAME ?? "paperclip-sm",
-      scopes: ALLOWED_SCOPES,
-    },
+    ok: false,
+    response: paperclipError(401, "invalid_api_key", "X-API-Key did not match"),
   };
+}
+
+/** Hash an API key for storage (SHA-256 hex). Stable, fast, deterministic. */
+export function sha256Hex(raw: string): string {
+  return createHash("sha256").update(raw).digest("hex");
 }
 
 /**
