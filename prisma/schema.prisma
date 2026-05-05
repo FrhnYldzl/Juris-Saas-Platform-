@@ -47,6 +47,7 @@ model Firm {
   resourceEvents   ResourceEvent[]
   proposalTemplates ProposalTemplate[]
   consultingContracts ConsultingContract[]
+  campaigns        Campaign[]
 
   @@map("firms")
 }
@@ -817,4 +818,35 @@ model AuditLog {
   @@index([firmId, createdAt])
   @@index([entityType, entityId])
   @@map("audit_logs")
+}
+
+// ---------------- Sales & Marketing · UTM Campaigns ----------------
+// Registered via Paperclip API (POST /api/paperclip/campaigns) so external
+// S&M tools can create UTM campaigns; each lead can later be attributed
+// back via Lead.source matching utm_campaign.
+
+model Campaign {
+  id           String    @id @default(cuid())
+  firmId       String    @map("firm_id")
+  name         String
+  utmSource    String    @map("utm_source")
+  utmMedium    String    @map("utm_medium")
+  utmCampaign  String    @map("utm_campaign")
+  utmTerm      String?   @map("utm_term")
+  utmContent   String?   @map("utm_content")
+  channel      String?   // BLOG / LINKEDIN / NEWSLETTER / etc.
+  startsAt     DateTime? @map("starts_at")
+  endsAt       DateTime? @map("ends_at")
+  budget       Decimal?  @db.Decimal(14, 2)
+  notes        String?   @db.Text
+  active       Boolean   @default(true)
+  createdVia   String?   @map("created_via") // "paperclip" | "ui" | etc.
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  firm Firm @relation(fields: [firmId], references: [id], onDelete: Cascade)
+
+  @@unique([firmId, utmCampaign])
+  @@index([firmId, active])
+  @@map("campaigns")
 }
