@@ -49,7 +49,7 @@ async function main() {
   // Demo team members
   const sarah = await prisma.user.create({
     data: {
-      email: `sarah.${slug}@juris.local`,
+      email: "sarah.juris-avukatlik-ortakligi@juris.local",
       name: "Av. Sarah Kılıç",
       title: "Av.",
       role: UserRole.ASSOCIATE,
@@ -60,7 +60,7 @@ async function main() {
 
   const burak = await prisma.user.create({
     data: {
-      email: `burak.${slug}@juris.local`,
+      email: "burak.juris-avukatlik-ortakligi@juris.local",
       name: "Stj. Av. Burak Öztürk",
       title: "Stj. Av.",
       role: UserRole.PARALEGAL,
